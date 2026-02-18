@@ -36,5 +36,4 @@ export type ViewState =
   | 'personalization' 
   | 'dashboard' 
   | 'detail' 
-  | 'saved' 
   | 'settings';

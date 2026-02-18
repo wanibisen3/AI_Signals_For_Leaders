@@ -1,13 +1,13 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, UserPreferences, ViewState, Brief, Role, CompanySize, DecisionArea } from './types';
 import { MOCK_BRIEFS } from './constants';
 
 // --- Shared Components ---
 
 // Fix: Changed children to optional to resolve JSX property missing errors
-const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button' }: { 
-  children?: React.ReactNode, onClick?: () => void, variant?: 'primary' | 'secondary' | 'ghost' | 'danger', className?: string, type?: 'button' | 'submit' 
+const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button' }: {
+  children?: React.ReactNode, onClick?: () => void, variant?: 'primary' | 'secondary' | 'ghost' | 'danger', className?: string, type?: 'button' | 'submit'
 }) => {
   const base = "px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap";
   const variants = {
@@ -49,7 +49,7 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
         The Strategic Advantage
       </div>
       <h1 className="text-6xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.1]">
-        AI signals that matter for <br/><span className="text-slate-400">product and business leaders</span>
+        AI signals that matter for <br /><span className="text-slate-400">product and business leaders</span>
       </h1>
       <p className="text-2xl text-slate-500 font-medium mb-14 max-w-2xl mx-auto leading-relaxed">
         We filter the noise of daily developments into structured decision briefs for the C-suite.
@@ -115,7 +115,7 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
           <a href="#" className="hover:text-white transition-colors">Contact</a>
         </div>
         <div className="flex items-center gap-2">
-           <div className="w-6 h-6 bg-white rounded flex items-center justify-center text-slate-900">
+          <div className="w-6 h-6 bg-white rounded flex items-center justify-center text-slate-900">
             <Icon name="analytics" className="text-sm" />
           </div>
           <p className="text-sm">© 2024 AI Signals for Leaders. All rights reserved.</p>
@@ -127,7 +127,36 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
 
 // --- View: Auth ---
 
-const AuthView = ({ mode, onBack, onSuccess }: { mode: 'signin' | 'signup', onBack: () => void, onSuccess: () => void }) => {
+const AuthView = ({
+  mode,
+  onBack,
+  onSubmit,
+  loading
+}: {
+  mode: 'signin' | 'signup',
+  onBack: () => void,
+  onSubmit: (payload: { email: string, password: string, confirmPassword?: string }) => Promise<void>,
+  loading: boolean
+}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    try {
+      await onSubmit({ email, password, confirmPassword });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authentication failed');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-12 border border-slate-200">
@@ -137,31 +166,53 @@ const AuthView = ({ mode, onBack, onSuccess }: { mode: 'signin' | 'signup', onBa
           </div>
           <h2 className="text-3xl font-extrabold text-slate-900">{mode === 'signin' ? 'Executive Sign In' : 'Create Account'}</h2>
           <p className="text-slate-500 text-sm mt-3 leading-relaxed">
-            {mode === 'signin' 
-              ? 'Access your private AI intelligence briefing.' 
+            {mode === 'signin'
+              ? 'Access your private AI intelligence briefing.'
               : 'Join a network of leaders making informed AI decisions.'}
           </p>
         </div>
-        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onSuccess(); }}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-1">
             <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Work Email</label>
-            <input type="email" required className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all" placeholder="name@company.com" />
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all"
+              placeholder="name@company.com"
+            />
           </div>
           <div className="space-y-1">
             <div className="flex justify-between">
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
               {mode === 'signin' && <button type="button" className="text-xs text-slate-400 hover:text-slate-900 font-medium">Forgot password?</button>}
             </div>
-            <input type="password" required className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all" placeholder="••••••••" />
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all"
+              placeholder="••••••••"
+            />
           </div>
           {mode === 'signup' && (
-             <div className="space-y-1">
+            <div className="space-y-1">
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</label>
-              <input type="password" required className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all" placeholder="••••••••" />
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all"
+                placeholder="••••••••"
+              />
             </div>
           )}
+          {error && <p className="text-sm text-red-500 font-semibold">{error}</p>}
           <Button type="submit" className="w-full py-4 text-base rounded-xl mt-4">
-            {mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Please wait...' : (mode === 'signin' ? 'Sign In' : 'Create Account')}
           </Button>
         </form>
         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
@@ -227,8 +278,8 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
             <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block">Critical Decision Areas</label>
             <div className="flex flex-wrap gap-3">
               {(['Product', 'Cost', 'GTM', 'Productivity', 'Risk'] as DecisionArea[]).map(area => (
-                <button 
-                  key={area} 
+                <button
+                  key={area}
                   onClick={() => toggleArea(area)}
                   className={`px-6 py-3 rounded-full border text-sm font-bold transition-all ${areas.includes(area) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-500 hover:border-slate-900'}`}
                 >
@@ -239,10 +290,10 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
           </div>
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main AI Concern / Objective</label>
-            <textarea 
+            <textarea
               value={concern}
               onChange={(e) => setConcern(e.target.value)}
-              placeholder="e.g., Transitioning to AI-native product architecture..." 
+              placeholder="e.g., Transitioning to AI-native product architecture..."
               className="w-full rounded-2xl border-slate-200 h-32 focus:ring-slate-900 focus:border-slate-900 py-4"
             />
           </div>
@@ -259,8 +310,8 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
 // --- View: Main Application ---
 
 // Fix: Changed children to optional to resolve JSX property missing errors
-const AppLayout = ({ children, activeView, setView, onSignOut, user }: { 
-  children?: React.ReactNode, activeView: string, setView: (v: ViewState) => void, onSignOut: () => void, user: User 
+const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
+  children?: React.ReactNode, activeView: string, setView: (v: ViewState) => void, onSignOut: () => void, user: User
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -277,11 +328,10 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
         <nav className="flex-1 px-6 space-y-2">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: 'auto_awesome' },
-            { id: 'saved', label: 'Saved Briefs', icon: 'bookmark_border' },
             { id: 'settings', label: 'Settings', icon: 'tune' },
           ].map(item => (
-            <button 
-              key={item.id} 
+            <button
+              key={item.id}
               onClick={() => { setView(item.id as ViewState); setProfileOpen(false); }}
               className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold transition-all ${activeView === item.id ? 'bg-slate-50 text-slate-900' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
             >
@@ -305,7 +355,7 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
             Executive Intelligence Portal
           </div>
           <div className="relative">
-            <div 
+            <div
               className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-all"
               onClick={() => setProfileOpen(!profileOpen)}
             >
@@ -341,8 +391,8 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
 
 // --- View: Dashboard ---
 
-const DashboardView = ({ user, onOpenBrief, onToggleSave, savedIds }: { 
-  user: User, onOpenBrief: (b: Brief) => void, onToggleSave: (id: string) => void, savedIds: Set<string> 
+const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
+  user: User, briefs: Brief[], loading: boolean, onOpenBrief: (b: Brief) => void
 }) => {
   return (
     <div className="max-w-5xl mx-auto py-16 px-12">
@@ -355,57 +405,57 @@ const DashboardView = ({ user, onOpenBrief, onToggleSave, savedIds }: {
         </p>
       </div>
 
-      <div className="grid gap-10">
-        {MOCK_BRIEFS.map(brief => (
-          <div key={brief.id} className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm hover:shadow-md transition-all group relative">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.source}</span>
-                <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.date}</span>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-32 space-y-4">
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-bold animate-pulse">Analyzing AI signals...</p>
+        </div>
+      ) : (
+        <div className="grid gap-10">
+          {briefs.map(brief => (
+            <div key={brief.id} className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm hover:shadow-md transition-all group relative">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.source}</span>
+                  <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.date}</span>
+                </div>
+                <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-slate-100">{brief.category}</span>
               </div>
-              <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-slate-100">{brief.category}</span>
-            </div>
 
-            <h3 className="text-3xl font-extrabold text-slate-900 mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
-            <p className="text-slate-500 text-lg leading-relaxed mb-10 line-clamp-2">{brief.summary}</p>
-            
-            <div className="grid md:grid-cols-2 gap-8 mb-10">
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                  <Icon name="visibility" className="text-base" /> Why this matters
-                </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">{brief.whyItMatters}</p>
-              </div>
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
-                  <Icon name="campaign" className="text-base" /> Leader takeaway
-                </h4>
-                <p className="text-sm text-slate-900 font-bold leading-relaxed">{brief.leaderTakeaway}</p>
-              </div>
-            </div>
+              <h3 className="text-3xl font-extrabold text-slate-900 mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
+              <p className="text-slate-500 text-lg leading-relaxed mb-10 line-clamp-2">{brief.summary}</p>
 
-            <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-              <button 
-                onClick={() => onToggleSave(brief.id)}
-                className={`flex items-center gap-2 text-sm font-bold transition-all ${savedIds.has(brief.id) ? 'text-slate-900' : 'text-slate-300 hover:text-slate-600'}`}
-              >
-                <Icon name={savedIds.has(brief.id) ? 'bookmark' : 'bookmark_border'} className="text-xl" /> 
-                {savedIds.has(brief.id) ? 'Saved' : 'Save Brief'}
-              </button>
-              <Button onClick={() => onOpenBrief(brief)} className="px-10 rounded-full font-bold">View Briefing Details</Button>
+              <div className="grid md:grid-cols-2 gap-8 mb-10">
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                    <Icon name="visibility" className="text-base" /> Why this matters
+                  </h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">{brief.whyItMatters}</p>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                    <Icon name="campaign" className="text-base" /> Leader takeaway
+                  </h4>
+                  <p className="text-sm text-slate-900 font-bold leading-relaxed">{brief.leaderTakeaway}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end pt-8 border-t border-slate-50">
+                <Button onClick={() => onOpenBrief(brief)} className="px-10 rounded-full font-bold">View Briefing Details</Button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 // --- View: Detail ---
 
-const DetailView = ({ brief, onBack, onToggleSave, savedIds }: { 
-  brief: Brief, onBack: () => void, onToggleSave: (id: string) => void, savedIds: Set<string> 
+const DetailView = ({ brief, onBack }: {
+  brief: Brief, onBack: () => void
 }) => {
   return (
     <div className="max-w-4xl mx-auto py-16 px-12">
@@ -467,10 +517,6 @@ const DetailView = ({ brief, onBack, onToggleSave, savedIds }: {
 
         <div className="mt-24 pt-12 border-t border-slate-100 flex flex-col sm:flex-row gap-6 justify-between items-center">
           <div className="flex gap-4">
-            <Button onClick={() => onToggleSave(brief.id)} className="rounded-full px-8">
-              <Icon name={savedIds.has(brief.id) ? 'bookmark' : 'bookmark_border'} /> 
-              {savedIds.has(brief.id) ? 'Brief Saved' : 'Save this Brief'}
-            </Button>
             <Button variant="secondary" className="rounded-full px-8">
               <Icon name="ios_share" /> Share Intelligence
             </Button>
@@ -480,57 +526,6 @@ const DetailView = ({ brief, onBack, onToggleSave, savedIds }: {
           </button>
         </div>
       </div>
-    </div>
-  );
-};
-
-// --- View: Saved ---
-
-const SavedBriefsView = ({ savedIds, onOpenBrief, onRemove }: { 
-  savedIds: Set<string>, onOpenBrief: (b: Brief) => void, onRemove: (id: string) => void 
-}) => {
-  const savedBriefs = MOCK_BRIEFS.filter(b => savedIds.has(b.id));
-
-  return (
-    <div className="max-w-5xl mx-auto py-16 px-12">
-      <div className="mb-16 border-l-4 border-slate-900 pl-8">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Saved Intelligence</h1>
-        <p className="text-slate-500 mt-3 text-lg font-medium">Your curated strategic knowledge base.</p>
-      </div>
-
-      {savedBriefs.length === 0 ? (
-        <div className="text-center py-32 bg-white border border-dashed border-slate-200 rounded-[2.5rem]">
-          <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mx-auto mb-8">
-             <Icon name="bookmark_border" className="text-5xl" />
-          </div>
-          <p className="text-slate-400 font-bold text-xl mb-2">Portfolio is empty</p>
-          <p className="text-slate-300">Signals you bookmark will appear here for deep review.</p>
-        </div>
-      ) : (
-        <div className="grid gap-6">
-          {savedBriefs.map(brief => (
-            <div key={brief.id} className="bg-white border border-slate-100 rounded-3xl p-8 flex items-center gap-8 group hover:shadow-lg transition-all relative overflow-hidden">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shrink-0">
-                <Icon name="description" className="text-3xl" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.date}</span>
-                  <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                  <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-slate-100">{brief.category}</span>
-                </div>
-                <h3 className="text-xl font-extrabold text-slate-900 truncate tracking-tight">{brief.headline}</h3>
-              </div>
-              <div className="flex items-center gap-4">
-                <Button onClick={() => onOpenBrief(brief)} variant="secondary" className="rounded-full px-8">Review</Button>
-                <button onClick={() => onRemove(brief.id)} className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 transition-colors">
-                  <Icon name="delete" className="text-2xl" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
@@ -569,8 +564,8 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
               </div>
             </div>
             <div className="space-y-3">
-               <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main Focus</label>
-               <input type="text" className="w-full rounded-xl border-slate-200 py-3 font-semibold" defaultValue={user.preferences.mainConcern || 'Optimizing team velocity with Generative AI'} />
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main Focus</label>
+              <input type="text" className="w-full rounded-xl border-slate-200 py-3 font-semibold" defaultValue={user.preferences.mainConcern || 'Optimizing team velocity with Generative AI'} />
             </div>
             <Button onClick={() => alert('Preferences updated')} className="px-10 rounded-full">Save Configuration</Button>
           </div>
@@ -579,7 +574,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
         <section className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
           <div className="p-10 border-b border-slate-50"><h3 className="text-xl font-black tracking-tight">Security & Credentials</h3></div>
           <div className="p-10 flex flex-col md:flex-row justify-between items-center gap-8">
-             <div className="max-w-md w-full">
+            <div className="max-w-md w-full">
               <p className="font-bold text-slate-900 mb-2">Change Account Password</p>
               <p className="text-sm text-slate-400 mb-6">Last updated 14 days ago.</p>
               <Button variant="secondary" className="rounded-full px-8">Update Password</Button>
@@ -615,7 +610,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
 
         <section className="bg-red-50/50 border border-red-100 rounded-[2rem] p-10 text-center">
           <h3 className="text-xl font-black text-red-800 mb-3">Terminate Portfolio</h3>
-          <p className="text-slate-500 mb-8 max-w-lg mx-auto">Once deleted, all historical data, saved briefs, and personalization parameters will be permanently scrubbed from our systems.</p>
+          <p className="text-slate-500 mb-8 max-w-lg mx-auto">Once deleted, all historical data and personalization parameters will be permanently scrubbed from our systems.</p>
           <Button variant="danger" className="rounded-full px-12">Delete Account Permanently</Button>
         </section>
       </div>
@@ -626,31 +621,124 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
 // --- Main App Entry ---
 
 const App = () => {
+  const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
+  const AUTH_TOKEN_KEY = 'ai_signals_auth_token';
+  const AUTH_USER_KEY = 'ai_signals_auth_user';
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<ViewState>('marketing');
   const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null);
-  const [savedBriefIds, setSavedBriefIds] = useState<Set<string>>(new Set());
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authBootstrapped, setAuthBootstrapped] = useState(false);
 
-  const handleAuthSuccess = () => {
-    setUser({
-      email: 'executive@leadership.com',
-      preferences: { role: '', companySize: '', decisionAreas: [], mainConcern: '', hasPersonalized: false }
-    });
-    setView('personalization');
+  const persistUser = (nextUser: User, token: string) => {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(nextUser));
+  };
+
+  const clearPersistedSession = () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+  };
+
+  const handleAuthSubmit = async ({ email, password }: { email: string, password: string }) => {
+    setAuthLoading(true);
+    try {
+      const endpoint = view === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
+      const response = await fetch(`${backendBaseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      const rawExisting = localStorage.getItem(AUTH_USER_KEY);
+      const existingUser = rawExisting ? JSON.parse(rawExisting) : null;
+      const nextUser: User = existingUser?.email === data.user.email
+        ? { ...data.user, preferences: existingUser.preferences || data.user.preferences }
+        : data.user;
+      persistUser(nextUser, data.token);
+      setUser(nextUser);
+      setView(nextUser.preferences.hasPersonalized ? 'dashboard' : 'personalization');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    try {
+      if (token) {
+        await fetch(`${backendBaseUrl}/api/auth/signout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ token })
+        });
+      }
+    } finally {
+      clearPersistedSession();
+      setUser(null);
+      setSelectedBrief(null);
+      setView('marketing');
+    }
   };
 
   const handlePersonalizationComplete = (prefs: UserPreferences) => {
     if (user) {
-      setUser({ ...user, preferences: prefs });
+      const updatedUser = { ...user, preferences: prefs };
+      setUser(updatedUser);
+      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      if (token) persistUser(updatedUser, token);
       setView('dashboard');
+      fetchBriefs(prefs); // Fetch briefs when personalization is complete
     }
   };
 
-  const toggleSave = (id: string) => {
-    const next = new Set(savedBriefIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSavedBriefIds(next);
+  const [briefs, setBriefs] = useState<Brief[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchBriefs = async (prefs?: UserPreferences) => {
+    setLoading(true);
+    try {
+      const effectivePreferences = prefs || user?.preferences || {
+        role: '',
+        companySize: '',
+        decisionAreas: [],
+        mainConcern: '',
+        hasPersonalized: false
+      };
+
+      const response = await fetch(`${backendBaseUrl}/api/signals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          preferences: effectivePreferences,
+          time_horizon: '30d',
+          tier_filter: 'ALL',
+          limit: 7
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBriefs(data.briefs);
+      } else {
+        console.error('Failed to fetch briefs:', data.error);
+        // Fallback to MOCK_BRIEFS on error for demo purposes
+        setBriefs(MOCK_BRIEFS);
+      }
+    } catch (error) {
+      console.error('Error fetching briefs:', error);
+      setBriefs(MOCK_BRIEFS);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const navigateToBrief = (brief: Brief) => {
@@ -658,44 +746,81 @@ const App = () => {
     setView('detail');
   };
 
+  useEffect(() => {
+    let active = true;
+    const bootstrapSession = async () => {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      const rawUser = localStorage.getItem(AUTH_USER_KEY);
+      if (!token) {
+        if (active) setAuthBootstrapped(true);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/api/auth/session`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Invalid session');
+
+        const persistedUser = rawUser ? JSON.parse(rawUser) : null;
+        const sessionUser: User = persistedUser?.email === data.user.email ? persistedUser : data.user;
+        if (!active) return;
+        setUser(sessionUser);
+        setView(sessionUser.preferences?.hasPersonalized ? 'dashboard' : 'personalization');
+      } catch {
+        clearPersistedSession();
+      } finally {
+        if (active) setAuthBootstrapped(true);
+      }
+    };
+
+    bootstrapSession();
+    return () => {
+      active = false;
+    };
+  }, [backendBaseUrl]);
+
   // --- Rendering Logic ---
 
+  if (!authBootstrapped) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-semibold">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'marketing') return <MarketingHome onAuth={setView} />;
-  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSuccess={handleAuthSuccess} />;
-  
+  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSubmit={handleAuthSubmit} loading={authLoading} />;
+
   if (!user) return <MarketingHome onAuth={setView} />;
 
   if (view === 'personalization') return <Personalization onComplete={handlePersonalizationComplete} />;
 
   return (
-    <AppLayout activeView={view} setView={setView} user={user} onSignOut={() => setView('marketing')}>
+    <AppLayout activeView={view} setView={setView} user={user} onSignOut={handleSignOut}>
       {view === 'dashboard' && (
-        <DashboardView 
-          user={user} 
-          savedIds={savedBriefIds} 
-          onOpenBrief={navigateToBrief} 
-          onToggleSave={toggleSave} 
+        <DashboardView
+          user={user}
+          briefs={briefs}
+          loading={loading}
+          onOpenBrief={navigateToBrief}
         />
       )}
       {view === 'detail' && selectedBrief && (
-        <DetailView 
-          brief={selectedBrief} 
-          onBack={() => setView('dashboard')} 
-          savedIds={savedBriefIds} 
-          onToggleSave={toggleSave} 
-        />
-      )}
-      {view === 'saved' && (
-        <SavedBriefsView 
-          savedIds={savedBriefIds} 
-          onOpenBrief={navigateToBrief} 
-          onRemove={toggleSave} 
+        <DetailView
+          brief={selectedBrief}
+          onBack={() => setView('dashboard')}
         />
       )}
       {view === 'settings' && (
-        <SettingsView 
-          user={user} 
-          onUpdate={setUser} 
+        <SettingsView
+          user={user}
+          onUpdate={setUser}
         />
       )}
     </AppLayout>

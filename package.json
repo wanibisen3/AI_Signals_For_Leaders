@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "backend:dev": "npm --prefix server run dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve:one": "npm run build && npm --prefix server start"
   },
   "dependencies": {
     "react": "^19.2.4",
