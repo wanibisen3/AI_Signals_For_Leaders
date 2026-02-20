@@ -683,6 +683,20 @@ const App = () => {
     localStorage.removeItem(AUTH_USER_KEY);
   };
 
+  const parseApiResponse = async (response: Response) => {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      return response.json();
+    }
+
+    const text = await response.text();
+    const preview = text.trim().slice(0, 80);
+    throw new Error(
+      `Unexpected non-JSON response from ${response.url || 'API'} (status ${response.status}). ` +
+      `Check VITE_BACKEND_URL and backend deployment. Response starts with: ${preview || '(empty)'}`
+    );
+  };
+
   const handleAuthSubmit = async ({ email, password }: { email: string, password: string }) => {
     setAuthLoading(true);
     try {
@@ -692,7 +706,7 @@ const App = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await response.json();
+      const data = await parseApiResponse(response);
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Authentication failed');
       }
@@ -768,7 +782,7 @@ const App = () => {
           limit: 7
         })
       });
-      const data = await response.json();
+      const data = await parseApiResponse(response);
       if (data.success) {
         setBriefs(data.briefs);
       } else {
@@ -803,7 +817,7 @@ const App = () => {
         const response = await fetch(`${backendBaseUrl}/api/auth/session`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await response.json();
+        const data = await parseApiResponse(response);
         if (!response.ok || !data.success) throw new Error(data.error || 'Invalid session');
 
         const persistedUser = rawUser ? JSON.parse(rawUser) : null;
