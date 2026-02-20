@@ -28,6 +28,11 @@ export interface Brief {
   date: string;
   category: string;
   matchScore?: number;
+  matchBreakdown?: {
+    role: number;
+    focus: number;
+    decisionAreas: number;
+  };
 }
 
 export type ViewState =

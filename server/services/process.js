@@ -1,5 +1,12 @@
 const { OpenAI } = require('openai');
-const { CATEGORY_KEYWORDS, EVENT_KEYWORDS, ENTITY_KEYWORDS } = require('../constants');
+const {
+    CATEGORY_KEYWORDS,
+    EVENT_KEYWORDS,
+    ENTITY_KEYWORDS,
+    ROLE_KEYWORDS,
+    DECISION_AREA_KEYWORDS,
+    MAIN_CONCERN_SYNONYMS
+} = require('../constants');
 
 const openai = process.env.OPENAI_API_KEY
     ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -92,6 +99,30 @@ function toDate(value) {
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+}
+
+function normalizeText(text = '') {
+    return String(text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function tokenize(text = '') {
+    const stopWords = new Set(['to', 'with', 'the', 'of', 'in', 'for', 'on', 'a', 'an', 'and', 'or', 'at', 'by']);
+    return normalizeText(text)
+        .split(' ')
+        .filter((t) => t.length > 2 && !stopWords.has(t));
+}
+
+function fractionMatch(text = '', terms = []) {
+    if (!terms.length) return 0;
+    let hits = 0;
+    for (const term of terms) {
+        if (text.includes(normalizeText(term))) hits += 1;
+    }
+    return hits / terms.length;
 }
 
 function normalizeItems(rawItems) {
@@ -298,33 +329,46 @@ function computeUrgency(cluster) {
 
 function computeLeaderFit(cluster, preferences = {}) {
     const role = preferences.role || 'Other';
-    const concern = (preferences.mainConcern || '').toLowerCase();
-    const areas = preferences.decisionAreas || [];
-    const text = `${cluster.representative.clean_title} ${cluster.representative.clean_text}`.toLowerCase();
-    let score = 0.5;
+    const concern = preferences.mainConcern || '';
+    const areas = Array.isArray(preferences.decisionAreas) ? preferences.decisionAreas : [];
+    const text = normalizeText(`${cluster.representative.clean_title} ${cluster.representative.clean_text} ${cluster.category || ''}`);
 
-    if (role === 'Founder' && /(go to market|funding|distribution|growth|customer)/.test(text)) score += 0.8;
-    if (role === 'Product Leader' && /(roadmap|product|feature|developer|workflow)/.test(text)) score += 0.8;
-    if (role === 'Business Leader' && /(cost|compliance|risk|enterprise|operations)/.test(text)) score += 0.8;
+    const roleTerms = ROLE_KEYWORDS[role] || ROLE_KEYWORDS.Other || [];
+    const roleMatch = role ? fractionMatch(text, roleTerms) : 0;
 
-    for (const area of areas) {
-        if (text.includes(String(area).toLowerCase())) score += 0.2;
+    const areaTerms = areas.flatMap((area) => DECISION_AREA_KEYWORDS[area] || [String(area || '')]);
+    const areaMatch = areaTerms.length ? fractionMatch(text, areaTerms) : 0;
+
+    const concernTokens = tokenize(concern);
+    const expandedConcernTerms = new Set(concernTokens);
+    for (const token of concernTokens) {
+        const synonyms = MAIN_CONCERN_SYNONYMS[token] || [];
+        for (const synonym of synonyms) expandedConcernTerms.add(synonym);
     }
-    if (concern) {
-        // Simple tokenization: remove common stop words and punctuation
-        const stopWords = new Set(['to', 'with', 'the', 'of', 'in', 'for', 'on', 'a', 'an', 'and', 'or', 'at', 'by']);
-        const tokens = concern.split(/[\s,.-]+/).filter(t => t.length > 3 && !stopWords.has(t));
+    const concernTerms = Array.from(expandedConcernTerms);
+    const concernTokenMatch = concernTerms.length ? fractionMatch(text, concernTerms) : 0;
+    const concernPhraseMatch = concern && text.includes(normalizeText(concern)) ? 1 : 0;
+    const concernMatch = concern
+        ? Math.min(1, concernTokenMatch * 0.8 + concernPhraseMatch * 0.2)
+        : 0;
 
-        let matchCount = 0;
-        for (const token of tokens) {
-            if (text.includes(token)) matchCount++;
-        }
+    const hasPersonalization = Boolean(role || concern || areas.length);
+    const personalizationMatch = hasPersonalization
+        ? clamp((roleMatch * 0.35) + (areaMatch * 0.25) + (concernMatch * 0.4), 0, 1)
+        : 0.5;
 
-        // Boost based on number of matches, up to a max
-        if (matchCount > 0) score += Math.min(1.0, 0.3 + (matchCount * 0.2));
-    }
+    // High influence so ordering actually responds to executive intent.
+    const score = hasPersonalization
+        ? clamp(0.25 + personalizationMatch * 2.75, 0.25, 3)
+        : 1.1;
 
-    return Math.min(2, score);
+    return {
+        score,
+        personalizationMatch,
+        roleMatch,
+        areaMatch,
+        concernMatch
+    };
 }
 
 function computeNoisePenalty(cluster) {
@@ -358,17 +402,30 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         const trust = computeTrust(cluster);
         const impact = computeImpact(cluster);
         const urgency = computeUrgency(cluster);
-        const leaderFit = computeLeaderFit(cluster, preferences);
+        const leaderFitDetails = computeLeaderFit(cluster, preferences);
         const noise = computeNoisePenalty(cluster);
+        const hasPersonalization = Boolean(
+            preferences?.role ||
+            preferences?.mainConcern ||
+            (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length)
+        );
 
-        const score = trust * impact * urgency * leaderFit - noise;
+        // Penalize low-match items when user provided explicit personalization.
+        const lowMatchPenalty = hasPersonalization && leaderFitDetails.personalizationMatch < 0.2 ? 1.35 : 0;
+        const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 0.9 : 0;
+
+        const score = trust * impact * urgency * leaderFitDetails.score - noise - lowMatchPenalty - mismatchPenalty;
         return {
             ...cluster,
             ranking: {
                 trust,
                 impact,
                 urgency,
-                leaderFit,
+                leaderFit: leaderFitDetails.score,
+                personalizationMatch: leaderFitDetails.personalizationMatch,
+                roleMatch: leaderFitDetails.roleMatch,
+                areaMatch: leaderFitDetails.areaMatch,
+                concernMatch: leaderFitDetails.concernMatch,
                 noise,
                 score
             }
@@ -381,6 +438,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
 
 function fallbackBrief(cluster, index = 0) {
     const item = cluster.representative;
+    const personalizationMatch = cluster.ranking?.personalizationMatch;
     return {
         id: `brief-${stableId(`${cluster.cluster_id}-${index}`)}`,
         clusterId: cluster.cluster_id,
@@ -401,7 +459,13 @@ function fallbackBrief(cluster, index = 0) {
         approvedAt: null,
         approvedBy: null,
         eventType: cluster.event_type,
-        supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url }))
+        supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
+        matchScore: personalizationMatch !== undefined ? Math.round(personalizationMatch * 100) : 50,
+        matchBreakdown: cluster.ranking ? {
+            role: Math.round((cluster.ranking.roleMatch || 0) * 100),
+            focus: Math.round((cluster.ranking.concernMatch || 0) * 100),
+            decisionAreas: Math.round((cluster.ranking.areaMatch || 0) * 100)
+        } : undefined
     };
 }
 
@@ -460,7 +524,14 @@ Be concrete and conservative.`;
             approvedBy: null,
             eventType: cluster.event_type,
             supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
-            matchScore: cluster.ranking?.leaderFit ? Math.round((cluster.ranking.leaderFit / 2) * 100) : 50
+            matchScore: cluster.ranking?.personalizationMatch !== undefined
+                ? Math.round(cluster.ranking.personalizationMatch * 100)
+                : (cluster.ranking?.leaderFit ? Math.round((cluster.ranking.leaderFit / 3) * 100) : 50),
+            matchBreakdown: cluster.ranking ? {
+                role: Math.round((cluster.ranking.roleMatch || 0) * 100),
+                focus: Math.round((cluster.ranking.concernMatch || 0) * 100),
+                decisionAreas: Math.round((cluster.ranking.areaMatch || 0) * 100)
+            } : undefined
         };
     } catch (error) {
         console.error('LLM generation failed, using fallback:', error.message);

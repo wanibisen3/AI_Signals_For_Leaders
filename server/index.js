@@ -85,8 +85,18 @@ function mapAuthUser(email = '') {
 
 function parsePipelineRequest(input = {}) {
     const parsedLimit = Number(input.limit || 7);
+    const rawPreferences = input.preferences || {};
+    const normalizedPreferences = {
+        role: String(rawPreferences.role || '').trim(),
+        companySize: String(rawPreferences.companySize || '').trim(),
+        decisionAreas: Array.isArray(rawPreferences.decisionAreas)
+            ? rawPreferences.decisionAreas.map((x) => String(x || '').trim()).filter(Boolean)
+            : [],
+        mainConcern: String(rawPreferences.mainConcern || '').trim(),
+        hasPersonalized: Boolean(rawPreferences.hasPersonalized)
+    };
     return {
-        preferences: input.preferences || {},
+        preferences: normalizedPreferences,
         timeHorizon: input.time_horizon || input.timeHorizon || '30d',
         tierFilter: input.tier_filter || input.tierFilter || 'ALL',
         limit: Number.isFinite(parsedLimit) ? Math.max(1, Math.min(parsedLimit, 20)) : 7,

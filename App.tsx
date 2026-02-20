@@ -459,6 +459,12 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
                   <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-slate-100">{brief.category}</span>
                 </div>
               </div>
+              {user.preferences.hasPersonalized && brief.matchBreakdown && (
+                <div className="mb-5 flex gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">
+                  <span className="px-2 py-1 rounded-full bg-slate-50 border border-slate-100">Role {brief.matchBreakdown.role}%</span>
+                  <span className="px-2 py-1 rounded-full bg-slate-50 border border-slate-100">Focus {brief.matchBreakdown.focus}%</span>
+                </div>
+              )}
 
               <h3 className="text-3xl font-extrabold text-slate-900 mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
               <p className="text-slate-500 text-lg leading-relaxed mb-10 line-clamp-2">{brief.summary}</p>
@@ -664,6 +670,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
 // --- Main App Entry ---
 
 const App = () => {
+  const BRIEF_LIMIT = 12;
   const AUTH_TOKEN_KEY = 'ai_signals_auth_token';
   const AUTH_USER_KEY = 'ai_signals_auth_user';
   const [user, setUser] = useState<User | null>(null);
@@ -778,7 +785,7 @@ const App = () => {
           preferences: effectivePreferences,
           time_horizon: '30d',
           tier_filter: 'ALL',
-          limit: 7
+          limit: BRIEF_LIMIT
         })
       });
       const data = await parseApiResponse(response);
