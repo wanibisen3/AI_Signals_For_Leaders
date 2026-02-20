@@ -310,7 +310,19 @@ function computeLeaderFit(cluster, preferences = {}) {
     for (const area of areas) {
         if (text.includes(String(area).toLowerCase())) score += 0.2;
     }
-    if (concern && text.includes(concern.split(' ')[0])) score += 0.3;
+    if (concern) {
+        // Simple tokenization: remove common stop words and punctuation
+        const stopWords = new Set(['to', 'with', 'the', 'of', 'in', 'for', 'on', 'a', 'an', 'and', 'or', 'at', 'by']);
+        const tokens = concern.split(/[\s,.-]+/).filter(t => t.length > 3 && !stopWords.has(t));
+
+        let matchCount = 0;
+        for (const token of tokens) {
+            if (text.includes(token)) matchCount++;
+        }
+
+        // Boost based on number of matches, up to a max
+        if (matchCount > 0) score += Math.min(1.0, 0.3 + (matchCount * 0.2));
+    }
 
     return Math.min(2, score);
 }
@@ -413,6 +425,8 @@ Cluster category: ${cluster.category}
 
 Return JSON with fields:
 headline, summary, whatHappened, whyItMatters, leaderTakeaway, whatToConsiderNext (array of 3 strings), category
+
+CRITICAL: In the 'whyItMatters' and 'leaderTakeaway' sections, directly address the user's main concern: "${preferences.mainConcern || 'General impact'}". Explain why this news is relevant to THAT specific objective.
 Be concrete and conservative.`;
 
     try {
@@ -445,7 +459,8 @@ Be concrete and conservative.`;
             approvedAt: null,
             approvedBy: null,
             eventType: cluster.event_type,
-            supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url }))
+            supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
+            matchScore: cluster.ranking?.leaderFit ? Math.round((cluster.ranking.leaderFit / 2) * 100) : 50
         };
     } catch (error) {
         console.error('LLM generation failed, using fallback:', error.message);

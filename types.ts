@@ -27,13 +27,14 @@ export interface Brief {
   source: string;
   date: string;
   category: string;
+  matchScore?: number;
 }
 
-export type ViewState = 
-  | 'marketing' 
-  | 'signin' 
-  | 'signup' 
-  | 'personalization' 
-  | 'dashboard' 
-  | 'detail' 
+export type ViewState =
+  | 'marketing'
+  | 'signin'
+  | 'signup'
+  | 'personalization'
+  | 'dashboard'
+  | 'detail'
   | 'settings';

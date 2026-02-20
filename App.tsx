@@ -6,8 +6,8 @@ import { MOCK_BRIEFS } from './constants';
 // --- Shared Components ---
 
 // Fix: Changed children to optional to resolve JSX property missing errors
-const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button' }: {
-  children?: React.ReactNode, onClick?: () => void, variant?: 'primary' | 'secondary' | 'ghost' | 'danger', className?: string, type?: 'button' | 'submit'
+const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button', disabled = false }: {
+  children?: React.ReactNode, onClick?: () => void, variant?: 'primary' | 'secondary' | 'ghost' | 'danger', className?: string, type?: 'button' | 'submit', disabled?: boolean
 }) => {
   const base = "px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap";
   const variants = {
@@ -17,7 +17,7 @@ const Button = ({ children, onClick, variant = 'primary', className = '', type =
     danger: "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100"
   };
   return (
-    <button type={type} onClick={onClick} className={`${base} ${variants[variant]} ${className}`}>
+    <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       {children}
     </button>
   );
@@ -229,16 +229,43 @@ const AuthView = ({
 
 const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) => void }) => {
   const [role, setRole] = useState<Role | ''>('');
-  const [size, setSize] = useState<CompanySize | ''>('');
-  const [areas, setAreas] = useState<DecisionArea[]>([]);
   const [concern, setConcern] = useState('');
+  const [customConcern, setCustomConcern] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
 
-  const toggleArea = (area: DecisionArea) => {
-    setAreas(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]);
+  const focusOptions = [
+    "Accelerating Product Innovation",
+    "Operational Efficiency & Cost",
+    "Risk, Compliance & Security",
+    "Market Strategy & Growth",
+    "Internal Workflows & Agents",
+    "Other (enter your own)"
+  ];
+
+  const handleFocusSelect = (opt: string) => {
+    if (opt === "Other (enter your own)") {
+      setIsCustom(true);
+      setConcern(customConcern);
+    } else {
+      setIsCustom(false);
+      setConcern(opt);
+    }
+  };
+
+  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomConcern(e.target.value);
+    setConcern(e.target.value);
   };
 
   const handleContinue = () => {
-    onComplete({ role, companySize: size, decisionAreas: areas, mainConcern: concern, hasPersonalized: true });
+    // Map simplified flow to existing data structure
+    onComplete({
+      role,
+      companySize: 'Growing', // Default
+      decisionAreas: [], // Default
+      mainConcern: concern,
+      hasPersonalized: true
+    });
   };
 
   const handleSkip = () => {
@@ -247,59 +274,62 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl">
-        <div className="text-center mb-16">
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-12">
           <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Personalize your AI Signals</h2>
-          <p className="text-slate-500 text-xl font-medium">Briefings tailored to your specific leadership context.</p>
+          <p className="text-slate-500 text-xl font-medium">To curate your intelligence briefing.</p>
         </div>
-        <div className="space-y-12 bg-white p-12 rounded-3xl border border-slate-100 shadow-sm">
-          <div className="grid md:grid-cols-2 gap-10">
-            <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">What is your role?</label>
-              <select value={role} onChange={(e) => setRole(e.target.value as Role)} className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900">
-                <option value="">Select your role</option>
-                <option value="Product Leader">Product Leader</option>
-                <option value="Business Leader">Business Leader</option>
-                <option value="Founder">Founder</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Company Size</label>
-              <select value={size} onChange={(e) => setSize(e.target.value as CompanySize)} className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900">
-                <option value="">Select size</option>
-                <option value="Startup">Startup</option>
-                <option value="Growing">Growing</option>
-                <option value="Large">Large</option>
-              </select>
-            </div>
-          </div>
+        <div className="space-y-10 bg-white p-12 rounded-3xl border border-slate-100 shadow-sm">
+
           <div className="space-y-4">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400 block">Critical Decision Areas</label>
-            <div className="flex flex-wrap gap-3">
-              {(['Product', 'Cost', 'GTM', 'Productivity', 'Risk'] as DecisionArea[]).map(area => (
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">1. What is your role?</label>
+            <div className="grid grid-cols-2 gap-4">
+              {['Product Leader', 'Business Leader', 'Founder', 'Other'].map((r) => (
                 <button
-                  key={area}
-                  onClick={() => toggleArea(area)}
-                  className={`px-6 py-3 rounded-full border text-sm font-bold transition-all ${areas.includes(area) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-500 hover:border-slate-900'}`}
+                  key={r}
+                  onClick={() => setRole(r as Role)}
+                  className={`py-4 rounded-xl border text-sm font-bold transition-all ${role === r ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-500 hover:border-slate-900'}`}
                 >
-                  {area}
+                  {r}
                 </button>
               ))}
             </div>
           </div>
-          <div className="space-y-3">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main AI Concern / Objective</label>
-            <textarea
-              value={concern}
-              onChange={(e) => setConcern(e.target.value)}
-              placeholder="e.g., Transitioning to AI-native product architecture..."
-              className="w-full rounded-2xl border-slate-200 h-32 focus:ring-slate-900 focus:border-slate-900 py-4"
-            />
+
+          <div className="space-y-4">
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">2. Primary Strategic Focus</label>
+            <div className="flex flex-col gap-3">
+              {focusOptions.map((opt) => {
+                const isSelected = isCustom ? opt === "Other (enter your own)" : concern === opt;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => handleFocusSelect(opt)}
+                    className={`w-full text-left px-6 py-4 rounded-xl border text-sm font-bold transition-all flex justify-between items-center ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-slate-400'}`}
+                  >
+                    {opt}
+                    {isSelected && <Icon name="check" />}
+                  </button>
+                );
+              })}
+              {isCustom && (
+                <input
+                  type="text"
+                  value={customConcern}
+                  onChange={handleCustomChange}
+                  placeholder="e.g. Navigating AI regulation in EU..."
+                  className="w-full rounded-xl border-slate-200 py-4 px-6 focus:ring-slate-900 focus:border-slate-900 animate-in fade-in slide-in-from-top-2"
+                  autoFocus
+                />
+              )}
+            </div>
           </div>
+
           <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-            <button onClick={handleSkip} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">Skip and show top AI updates</button>
-            <Button onClick={handleContinue} className="px-12 py-4 rounded-full">Continue to Dashboard</Button>
+            <button onClick={handleSkip} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">Skip</button>
+            <Button onClick={handleContinue} className="px-12 py-4 rounded-full" disabled={!role || !concern}>
+              Continue to Dashboard
+            </Button>
           </div>
         </div>
       </div>
@@ -420,7 +450,14 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
                   <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.date}</span>
                 </div>
-                <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-slate-100">{brief.category}</span>
+                <div className="flex gap-2">
+                  {brief.matchScore && brief.matchScore > 65 && (
+                    <span className="bg-blue-50 text-blue-600 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-blue-100 flex items-center gap-1">
+                      <Icon name="verified" className="text-sm" /> {brief.matchScore}% Relevance
+                    </span>
+                  )}
+                  <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-slate-100">{brief.category}</span>
+                </div>
               </div>
 
               <h3 className="text-3xl font-extrabold text-slate-900 mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
@@ -447,8 +484,9 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
             </div>
           ))}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
@@ -465,6 +503,11 @@ const DetailView = ({ brief, onBack }: {
 
       <div className="bg-white border border-slate-100 rounded-[2.5rem] p-16 shadow-sm">
         <div className="flex items-center gap-4 mb-8">
+          {brief.matchScore && brief.matchScore > 65 && (
+            <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+              <Icon name="verified" className="text-sm" /> Target Match
+            </span>
+          )}
           <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em]">{brief.category}</span>
           <span className="text-slate-300 text-xs font-bold uppercase tracking-widest">{brief.source} • {brief.date}</span>
         </div>
