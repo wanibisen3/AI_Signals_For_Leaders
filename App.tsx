@@ -131,11 +131,13 @@ const AuthView = ({
   mode,
   onBack,
   onSubmit,
+  onGoogleAuth,
   loading
 }: {
   mode: 'signin' | 'signup',
   onBack: () => void,
   onSubmit: (payload: { email: string, password: string, confirmPassword?: string }) => Promise<void>,
+  onGoogleAuth: () => Promise<void>,
   loading: boolean
 }) => {
   const [email, setEmail] = useState('');
@@ -157,6 +159,15 @@ const AuthView = ({
     }
   };
 
+  const handleGoogle = async () => {
+    setError('');
+    try {
+      await onGoogleAuth();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google authentication failed');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-12 border border-slate-200">
@@ -170,6 +181,20 @@ const AuthView = ({
               ? 'Access your private AI intelligence briefing.'
               : 'Join a network of leaders making informed AI decisions.'}
           </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={loading}
+          className="w-full mb-6 py-3.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        >
+          <Icon name="login" className="text-base" />
+          Continue with Google
+        </button>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-px flex-1 bg-slate-100"></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">or</span>
+          <div className="h-px flex-1 bg-slate-100"></div>
         </div>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-1">
@@ -344,11 +369,15 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
   children?: React.ReactNode, activeView: string, setView: (v: ViewState) => void, onSignOut: () => void, user: User
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'auto_awesome' },
+    { id: 'settings', label: 'Settings', icon: 'tune' },
+  ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex min-h-screen md:h-screen flex-col md:flex-row overflow-hidden bg-white">
       {/* Sidebar */}
-      <aside className="w-72 border-r border-slate-100 flex flex-col shrink-0 bg-white">
+      <aside className="hidden md:flex w-72 border-r border-slate-100 flex-col shrink-0 bg-white">
         <div className="p-10 mb-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-sm">
             <Icon name="analytics" className="text-2xl" />
@@ -356,10 +385,7 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
           <span className="text-2xl font-black tracking-tighter text-slate-900">AI Signals</span>
         </div>
         <nav className="flex-1 px-6 space-y-2">
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: 'auto_awesome' },
-            { id: 'settings', label: 'Settings', icon: 'tune' },
-          ].map(item => (
+          {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => { setView(item.id as ViewState); setProfileOpen(false); }}
@@ -380,20 +406,23 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-slate-50/30">
-        <header className="h-24 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-12 shrink-0 z-10">
-          <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
+        <header className="h-16 md:h-24 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 md:px-12 shrink-0 z-10">
+          <div className="hidden lg:block text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
             Executive Intelligence Portal
+          </div>
+          <div className="lg:hidden text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+            AI Signals
           </div>
           <div className="relative">
             <div
-              className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-all"
+              className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-all"
               onClick={() => setProfileOpen(!profileOpen)}
             >
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-900">{user.email.split('@')[0]}</p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{user.preferences.role || 'Executive'}</p>
               </div>
-              <div className="w-11 h-11 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
+              <div className="w-9 h-9 md:w-11 md:h-11 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
                 <Icon name="person" className="text-xl" />
               </div>
             </div>
@@ -410,6 +439,18 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
             )}
           </div>
         </header>
+        <div className="md:hidden border-b border-slate-100 bg-white px-3 py-2 flex items-center gap-2">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setView(item.id as ViewState); setProfileOpen(false); }}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeView === item.id ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-500'}`}
+            >
+              <Icon name={item.icon} className="text-base" />
+              {item.label}
+            </button>
+          ))}
+        </div>
 
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           {children}
@@ -425,12 +466,12 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
   user: User, briefs: Brief[], loading: boolean, onOpenBrief: (b: Brief) => void
 }) => {
   return (
-    <div className="max-w-5xl mx-auto py-16 px-12">
-      <div className="mb-16 border-l-4 border-slate-900 pl-8">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+    <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
+      <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-slate-900 pl-4 sm:pl-6 lg:pl-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
           {user.preferences.hasPersonalized ? `AI Signals for ${user.email.split('@')[0]}` : 'Top AI Developments'}
         </h1>
-        <p className="text-slate-500 mt-3 text-lg font-medium leading-relaxed max-w-2xl">
+        <p className="text-slate-500 mt-3 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
           Curated briefings for high-level decision makers. <span className="text-slate-300">Updated daily.</span>
         </p>
       </div>
@@ -441,16 +482,16 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
           <p className="text-slate-500 font-bold animate-pulse">Analyzing AI signals...</p>
         </div>
       ) : (
-        <div className="grid gap-10">
+        <div className="grid gap-6 sm:gap-8 lg:gap-10">
           {briefs.map(brief => (
-            <div key={brief.id} className="bg-white border border-slate-100 rounded-3xl p-10 shadow-sm hover:shadow-md transition-all group relative">
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-4">
+            <div key={brief.id} className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-md transition-all group relative">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-5 sm:mb-6">
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.source}</span>
                   <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.date}</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {brief.matchScore && brief.matchScore > 65 && (
                     <span className="bg-blue-50 text-blue-600 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-blue-100 flex items-center gap-1">
                       <Icon name="verified" className="text-sm" /> {brief.matchScore}% Relevance
@@ -460,14 +501,14 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
                 </div>
               </div>
               {user.preferences.hasPersonalized && brief.matchBreakdown && (
-                <div className="mb-5 flex gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">
+                <div className="mb-4 sm:mb-5 flex gap-2 flex-wrap text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">
                   <span className="px-2 py-1 rounded-full bg-slate-50 border border-slate-100">Role {brief.matchBreakdown.role}%</span>
                   <span className="px-2 py-1 rounded-full bg-slate-50 border border-slate-100">Focus {brief.matchBreakdown.focus}%</span>
                 </div>
               )}
 
-              <h3 className="text-3xl font-extrabold text-slate-900 mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
-              <p className="text-slate-500 text-lg leading-relaxed mb-10 line-clamp-2">{brief.summary}</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 sm:mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
+              <p className="text-slate-500 text-base sm:text-lg leading-relaxed mb-6 sm:mb-10 line-clamp-3 sm:line-clamp-2">{brief.summary}</p>
 
               <div className="grid md:grid-cols-2 gap-8 mb-10">
                 <div className="space-y-3">
@@ -484,8 +525,8 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end pt-8 border-t border-slate-50">
-                <Button onClick={() => onOpenBrief(brief)} className="px-10 rounded-full font-bold">View Briefing Details</Button>
+              <div className="flex items-center justify-end pt-6 sm:pt-8 border-t border-slate-50">
+                <Button onClick={() => onOpenBrief(brief)} className="w-full sm:w-auto px-8 sm:px-10 rounded-full font-bold">View Briefing Details</Button>
               </div>
             </div>
           ))}
@@ -502,13 +543,13 @@ const DetailView = ({ brief, onBack }: {
   brief: Brief, onBack: () => void
 }) => {
   return (
-    <div className="max-w-4xl mx-auto py-16 px-12">
-      <button onClick={onBack} className="flex items-center gap-3 text-slate-400 font-bold mb-16 hover:text-slate-900 transition-colors uppercase text-[10px] tracking-[0.2em]">
+    <div className="max-w-4xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
+      <button onClick={onBack} className="flex items-center gap-3 text-slate-400 font-bold mb-8 sm:mb-12 lg:mb-16 hover:text-slate-900 transition-colors uppercase text-[10px] tracking-[0.2em]">
         <Icon name="west" className="text-lg" /> Back to Dashboard
       </button>
 
-      <div className="bg-white border border-slate-100 rounded-[2.5rem] p-16 shadow-sm">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="bg-white border border-slate-100 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-16 shadow-sm">
+        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 flex-wrap">
           {brief.matchScore && brief.matchScore > 65 && (
             <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
               <Icon name="verified" className="text-sm" /> Target Match
@@ -518,9 +559,9 @@ const DetailView = ({ brief, onBack }: {
           <span className="text-slate-300 text-xs font-bold uppercase tracking-widest">{brief.source} • {brief.date}</span>
         </div>
 
-        <h1 className="text-5xl font-black text-slate-900 leading-[1.1] mb-16 tracking-tighter">{brief.headline}</h1>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1] mb-8 sm:mb-12 lg:mb-16 tracking-tighter">{brief.headline}</h1>
 
-        <div className="space-y-20">
+        <div className="space-y-10 sm:space-y-14 lg:space-y-20">
           <section>
             <div className="flex items-center gap-4 mb-8">
               <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900">
@@ -528,10 +569,10 @@ const DetailView = ({ brief, onBack }: {
               </div>
               <h2 className="text-2xl font-black tracking-tight text-slate-900">What Happened</h2>
             </div>
-            <p className="text-xl text-slate-600 leading-[1.7] font-medium">{brief.whatHappened}</p>
+            <p className="text-lg sm:text-xl text-slate-600 leading-[1.7] font-medium">{brief.whatHappened}</p>
           </section>
 
-          <section className="bg-slate-900 text-white p-12 rounded-[2rem] shadow-2xl relative overflow-hidden">
+          <section className="bg-slate-900 text-white p-6 sm:p-8 lg:p-12 rounded-3xl sm:rounded-[2rem] shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10">
               <Icon name="insights" className="text-[120px]" />
             </div>
@@ -541,7 +582,7 @@ const DetailView = ({ brief, onBack }: {
               </div>
               <h2 className="text-2xl font-black tracking-tight">Executive Significance</h2>
             </div>
-            <p className="text-2xl text-slate-100 leading-[1.6] font-semibold italic border-l-4 border-white/20 pl-8">{brief.whyItMatters}</p>
+            <p className="text-xl sm:text-2xl text-slate-100 leading-[1.6] font-semibold italic border-l-4 border-white/20 pl-5 sm:pl-8">{brief.whyItMatters}</p>
           </section>
 
           <section>
@@ -553,18 +594,18 @@ const DetailView = ({ brief, onBack }: {
             </div>
             <ul className="grid gap-4">
               {brief.whatToConsiderNext.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-6 p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition-colors group">
+                <li key={idx} className="flex items-start gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition-colors group">
                   <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:bg-slate-900 group-hover:text-white transition-all">
                     {idx + 1}
                   </div>
-                  <span className="font-bold text-slate-700 text-lg">{item}</span>
+                  <span className="font-bold text-slate-700 text-base sm:text-lg">{item}</span>
                 </li>
               ))}
             </ul>
           </section>
         </div>
 
-        <div className="mt-24 pt-12 border-t border-slate-100 flex flex-col sm:flex-row gap-6 justify-between items-center">
+        <div className="mt-12 sm:mt-16 lg:mt-24 pt-8 sm:pt-12 border-t border-slate-100 flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center">
           <div className="flex gap-4">
             <Button variant="secondary" className="rounded-full px-8">
               <Icon name="ios_share" /> Share Intelligence
@@ -583,10 +624,10 @@ const DetailView = ({ brief, onBack }: {
 
 const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => void }) => {
   return (
-    <div className="max-w-5xl mx-auto py-16 px-12">
-      <div className="mb-16 border-l-4 border-slate-900 pl-8">
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Settings</h1>
-        <p className="text-slate-500 mt-3 text-lg font-medium">Configure your intelligence parameters.</p>
+    <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
+      <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-slate-900 pl-4 sm:pl-6 lg:pl-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Settings</h1>
+        <p className="text-slate-500 mt-3 text-base sm:text-lg font-medium">Configure your intelligence parameters.</p>
       </div>
 
       <div className="space-y-10">
@@ -703,6 +744,16 @@ const App = () => {
     );
   };
 
+  const cleanOAuthUrl = () => {
+    const hasAuthHash = window.location.hash.includes('access_token') || window.location.hash.includes('error=');
+    const search = window.location.search;
+    const hasAuthQuery = search.includes('code=') || search.includes('error=');
+    const isCallbackPath = window.location.pathname === '/auth/callback';
+    if (hasAuthHash || hasAuthQuery || isCallbackPath) {
+      window.history.replaceState({}, '', '/');
+    }
+  };
+
   const handleAuthSubmit = async ({ email, password }: { email: string, password: string }) => {
     setAuthLoading(true);
     try {
@@ -725,6 +776,25 @@ const App = () => {
       persistUser(nextUser, data.token);
       setUser(nextUser);
       setView(nextUser.preferences.hasPersonalized ? 'dashboard' : 'personalization');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setAuthLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const response = await fetch('/api/auth/google/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redirectTo })
+      });
+      const data = await parseApiResponse(response);
+      if (!response.ok || !data.success || !data.url) {
+        throw new Error(data.error || 'Failed to start Google sign in');
+      }
+      window.location.assign(data.url);
     } finally {
       setAuthLoading(false);
     }
@@ -812,8 +882,40 @@ const App = () => {
   useEffect(() => {
     let active = true;
     const bootstrapSession = async () => {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      let token = localStorage.getItem(AUTH_TOKEN_KEY);
       const rawUser = localStorage.getItem(AUTH_USER_KEY);
+
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const queryParams = new URLSearchParams(window.location.search);
+      const oauthError = hashParams.get('error_description') || queryParams.get('error_description') || queryParams.get('error');
+      if (oauthError) {
+        cleanOAuthUrl();
+      }
+
+      const accessTokenFromHash = hashParams.get('access_token');
+      if (accessTokenFromHash) {
+        token = accessTokenFromHash;
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+        cleanOAuthUrl();
+      } else if (queryParams.get('code')) {
+        try {
+          const exchangeResponse = await fetch('/api/auth/exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: queryParams.get('code') })
+          });
+          const exchangeData = await parseApiResponse(exchangeResponse);
+          if (exchangeResponse.ok && exchangeData.success && exchangeData.token) {
+            token = exchangeData.token;
+            localStorage.setItem(AUTH_TOKEN_KEY, token);
+          }
+        } catch {
+          // ignored, standard session bootstrap below will handle invalid state
+        } finally {
+          cleanOAuthUrl();
+        }
+      }
+
       if (!token) {
         if (active) setAuthBootstrapped(true);
         return;
@@ -858,7 +960,7 @@ const App = () => {
   }
 
   if (view === 'marketing') return <MarketingHome onAuth={setView} />;
-  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSubmit={handleAuthSubmit} loading={authLoading} />;
+  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSubmit={handleAuthSubmit} onGoogleAuth={handleGoogleAuth} loading={authLoading} />;
 
   if (!user) return <MarketingHome onAuth={setView} />;
 

@@ -70,3 +70,12 @@ Frontend helper:
    - `CACHE_TTL_MS` (optional)
    - `SEMANTIC_DEDUPE_THRESHOLD` (optional)
 3. Deploy.
+
+## Google Sign-In Setup (Supabase)
+
+To enable "Continue with Google":
+
+1. In Supabase Dashboard -> Authentication -> Providers, enable Google.
+2. Add redirect URLs in Supabase Auth settings:
+   - `https://ai-signals-for-leaders.vercel.app/auth/callback`
+   - `http://localhost:3000/auth/callback`

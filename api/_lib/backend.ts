@@ -97,6 +97,18 @@ function normalizeEmail(email = '') {
   return String(email || '').trim().toLowerCase();
 }
 
+function getRequestOrigin(req: AnyReq) {
+  const explicitOrigin = String(process.env.PUBLIC_APP_URL || '').trim();
+  if (explicitOrigin) return explicitOrigin.replace(/\/+$/, '');
+
+  const forwardedProto = String(req.headers?.['x-forwarded-proto'] || '').split(',')[0].trim();
+  const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim();
+  const host = forwardedHost || String(req.headers?.host || '').trim();
+  const proto = forwardedProto || (host.includes('localhost') ? 'http' : 'https');
+  if (!host) return '';
+  return `${proto}://${host}`;
+}
+
 async function readBody(req: AnyReq) {
   if (req.body !== undefined) {
     if (typeof req.body !== 'string') return req.body || {};
@@ -327,6 +339,73 @@ export async function handleAuthSignout(req: AnyReq, res: AnyRes) {
     return res.json({ success: true });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'Signout failed' });
+  }
+}
+
+export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
+  if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
+  initSupabaseClients();
+
+  try {
+    if (!supabaseAuth) {
+      return res.status(503).json({ success: false, error: 'Supabase auth is not configured' });
+    }
+
+    const body = await readBody(req);
+    const origin = getRequestOrigin(req);
+    const fallbackRedirect = origin ? `${origin}/auth/callback` : undefined;
+    const redirectTo = String(body?.redirectTo || fallbackRedirect || '').trim();
+    if (!redirectTo) {
+      return res.status(400).json({ success: false, error: 'Missing redirect URL' });
+    }
+
+    const startResult = await supabaseAuth.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+
+    if (startResult.error || !startResult.data?.url) {
+      return res.status(400).json({
+        success: false,
+        error: startResult.error?.message || 'Failed to start Google authentication'
+      });
+    }
+
+    return res.json({ success: true, url: startResult.data.url });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'Google auth start failed' });
+  }
+}
+
+export async function handleAuthExchange(req: AnyReq, res: AnyRes) {
+  if (req.method !== 'POST') return methodNotAllowed(res, 'POST');
+  initSupabaseClients();
+
+  try {
+    if (!supabaseAuth) {
+      return res.status(503).json({ success: false, error: 'Supabase auth is not configured' });
+    }
+
+    const body = await readBody(req);
+    const code = String(body?.code || '').trim();
+    if (!code) return res.status(400).json({ success: false, error: 'Missing auth code' });
+
+    const exchangeResult = await supabaseAuth.auth.exchangeCodeForSession(code);
+    if (exchangeResult.error || !exchangeResult.data?.session) {
+      return res.status(400).json({
+        success: false,
+        error: exchangeResult.error?.message || 'Failed to exchange auth code'
+      });
+    }
+
+    const session = exchangeResult.data.session;
+    return res.json({
+      success: true,
+      token: session.access_token,
+      user: mapAuthUser(exchangeResult.data.user?.email || '')
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error?.message || 'Auth exchange failed' });
   }
 }
 
