@@ -16,14 +16,17 @@ View your app in AI Studio: https://ai.studio/apps/drive/1pwx0TIVVnbgbuLgRua9ABl
    `npm install`
 2. Create a local env file from the template:
    `cp .env.example .env.local`
-3. Set `OPENAI_API_KEY` in `.env.local`
-4. (Optional) Set `VITE_BACKEND_URL` in `.env.local` if backend is not on `http://localhost:3001`
+3. Set required server env vars in `.env.local`:
+   - `OPENAI_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY` (optional for signout admin revoke)
 5. Run the app:
    `npm run dev`
 
-## Backend Pipeline
+## Backend Pipeline (Local Express)
 
-The frontend dashboard expects the Node backend in `server/` to be running for live briefs.
+This repo still includes `server/` for local/backend-only runs, but Vercel deployment now uses `api/*.ts` serverless routes.
 
 1. `cd server`
 2. `npm install`
@@ -55,9 +58,15 @@ The OpenAI API key is server-side only.
 Frontend helper:
 - `services/openai.ts`
 
-## Deploy on Vercel
+## Deploy on Vercel (Single Domain)
 
 1. Import this repo into Vercel.
 2. In Project Settings -> Environment Variables, add:
    - `OPENAI_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY` (optional but recommended)
+   - `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
+   - `CACHE_TTL_MS` (optional)
+   - `SEMANTIC_DEDUPE_THRESHOLD` (optional)
 3. Deploy.

@@ -664,7 +664,6 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
 // --- Main App Entry ---
 
 const App = () => {
-  const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
   const AUTH_TOKEN_KEY = 'ai_signals_auth_token';
   const AUTH_USER_KEY = 'ai_signals_auth_user';
   const [user, setUser] = useState<User | null>(null);
@@ -693,7 +692,7 @@ const App = () => {
     const preview = text.trim().slice(0, 80);
     throw new Error(
       `Unexpected non-JSON response from ${response.url || 'API'} (status ${response.status}). ` +
-      `Check VITE_BACKEND_URL and backend deployment. Response starts with: ${preview || '(empty)'}`
+      `Check API deployment. Response starts with: ${preview || '(empty)'}`
     );
   };
 
@@ -701,7 +700,7 @@ const App = () => {
     setAuthLoading(true);
     try {
       const endpoint = view === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
-      const response = await fetch(`${backendBaseUrl}${endpoint}`, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -728,7 +727,7 @@ const App = () => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
     try {
       if (token) {
-        await fetch(`${backendBaseUrl}/api/auth/signout`, {
+        await fetch('/api/auth/signout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -770,7 +769,7 @@ const App = () => {
         hasPersonalized: false
       };
 
-      const response = await fetch(`${backendBaseUrl}/api/signals`, {
+      const response = await fetch('/api/signals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -814,7 +813,7 @@ const App = () => {
       }
 
       try {
-        const response = await fetch(`${backendBaseUrl}/api/auth/session`, {
+        const response = await fetch('/api/auth/session', {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await parseApiResponse(response);
@@ -836,7 +835,7 @@ const App = () => {
     return () => {
       active = false;
     };
-  }, [backendBaseUrl]);
+  }, []);
 
   // --- Rendering Logic ---
 
