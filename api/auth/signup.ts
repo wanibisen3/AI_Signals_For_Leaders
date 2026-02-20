@@ -1,3 +1,3 @@
-import { handleAuthSignup } from '../_lib/backend';
+import { handleAuthSignup } from '../_lib/backend.js';
 
 export default handleAuthSignup;
