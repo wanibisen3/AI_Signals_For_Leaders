@@ -187,9 +187,9 @@ async function runPipeline({
     (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length)
   );
   const requestedLimit = Number(limit);
-  const focusQuota = hasPersonalization ? Math.ceil(requestedLimit * 0.75) : 0;
-  const focusFirst = ranked.filter((cluster: any) => (cluster?.ranking?.focusPriority || 0) > 0);
-  const others = ranked.filter((cluster: any) => (cluster?.ranking?.focusPriority || 0) === 0);
+  const focusQuota = hasPersonalization ? Math.ceil(requestedLimit * 0.9) : 0;
+  const focusFirst = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) >= 0.45);
+  const others = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) < 0.45);
   const prioritized = hasPersonalization
     ? [...focusFirst.slice(0, focusQuota), ...others, ...focusFirst.slice(focusQuota)]
     : ranked;

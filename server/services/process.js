@@ -450,7 +450,10 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         const focusCategoryMatch = preferredCategories.includes(cluster.category);
         const focusSemanticMatch = (leaderFitDetails.concernMatch >= 0.45) || (leaderFitDetails.areaMatch >= 0.45);
         const focusPriority = hasPersonalization && (focusCategoryMatch || focusSemanticMatch) ? 1 : 0;
-        const focusBoost = focusPriority ? 2.4 : 0;
+        const focusMatch = hasPersonalization
+            ? clamp((focusCategoryMatch ? 0.6 : 0) + (leaderFitDetails.concernMatch * 0.25) + (leaderFitDetails.areaMatch * 0.15), 0, 1)
+            : 0.5;
+        const focusBoost = focusMatch * 3.2;
         const stalePenalty = freshnessDetails.ageDays > 30 ? Math.min(1.6, (freshnessDetails.ageDays - 30) * 0.03) : 0;
 
         const score = trust * impact * urgency * leaderFitDetails.score * freshnessDetails.freshness
@@ -468,6 +471,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
                 freshness: freshnessDetails.freshness,
                 ageDays: Math.round(freshnessDetails.ageDays),
                 focusPriority,
+                focusMatch,
                 leaderFit: leaderFitDetails.score,
                 personalizationMatch: leaderFitDetails.personalizationMatch,
                 roleMatch: leaderFitDetails.roleMatch,
@@ -515,7 +519,7 @@ function fallbackBrief(cluster, index = 0) {
         matchScore: personalizationMatch !== undefined ? Math.round(personalizationMatch * 100) : 50,
         matchBreakdown: cluster.ranking ? {
             role: Math.round((cluster.ranking.roleMatch || 0) * 100),
-            focus: Math.round((cluster.ranking.concernMatch || 0) * 100),
+            focus: Math.round((cluster.ranking.focusMatch || 0) * 100),
             decisionAreas: Math.round((cluster.ranking.areaMatch || 0) * 100)
         } : undefined
     };
@@ -581,7 +585,7 @@ Be concrete and conservative.`;
                 : (cluster.ranking?.leaderFit ? Math.round((cluster.ranking.leaderFit / 3) * 100) : 50),
             matchBreakdown: cluster.ranking ? {
                 role: Math.round((cluster.ranking.roleMatch || 0) * 100),
-                focus: Math.round((cluster.ranking.concernMatch || 0) * 100),
+                focus: Math.round((cluster.ranking.focusMatch || 0) * 100),
                 decisionAreas: Math.round((cluster.ranking.areaMatch || 0) * 100)
             } : undefined
         };

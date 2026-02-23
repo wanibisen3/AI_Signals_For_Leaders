@@ -879,7 +879,8 @@ const App = () => {
           preferences: effectivePreferences,
           time_horizon: '30d',
           tier_filter: 'ALL',
-          limit: BRIEF_LIMIT
+          limit: BRIEF_LIMIT,
+          bypass_cache: true
         })
       });
       const data = await parseApiResponse(response);
