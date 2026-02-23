@@ -282,12 +282,26 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
     setConcern(e.target.value);
   };
 
+  const inferDecisionAreasFromConcern = (value: string): DecisionArea[] => {
+    const text = value.toLowerCase();
+    const areas = new Set<DecisionArea>();
+
+    if (/(product|feature|roadmap|innovation|agent|workflow)/.test(text)) areas.add('Product');
+    if (/(cost|efficiency|budget|pricing|spend)/.test(text)) areas.add('Cost');
+    if (/(risk|compliance|security|privacy|regulation|policy)/.test(text)) areas.add('Risk');
+    if (/(market|growth|sales|go to market|gtm|customer|distribution)/.test(text)) areas.add('GTM');
+    if (/(productivity|operations|internal|automation|velocity)/.test(text)) areas.add('Productivity');
+
+    return Array.from(areas);
+  };
+
   const handleContinue = () => {
+    const inferredDecisionAreas = inferDecisionAreasFromConcern(concern);
     // Map simplified flow to existing data structure
     onComplete({
       role,
       companySize: 'Growing', // Default
-      decisionAreas: [], // Default
+      decisionAreas: inferredDecisionAreas,
       mainConcern: concern,
       hasPersonalized: true
     });

@@ -387,6 +387,21 @@ function computeTrust(cluster) {
     return clamp(base + corroboration - tierCPenalty, 0.4, 1);
 }
 
+function preferredCategoriesFromPreferences(preferences = {}) {
+    const categories = new Set();
+    const areas = Array.isArray(preferences.decisionAreas) ? preferences.decisionAreas : [];
+    for (const area of areas) categories.add(area);
+
+    const concern = normalizeText(preferences.mainConcern || '');
+    if (/(innovation|product|feature|agent|roadmap|model)/.test(concern)) categories.add('Product');
+    if (/(cost|efficiency|budget|pricing|spend)/.test(concern)) categories.add('Cost');
+    if (/(risk|compliance|security|privacy|regulation|policy)/.test(concern)) categories.add('Risk');
+    if (/(growth|market|go to market|gtm|sales|customer|distribution)/.test(concern)) categories.add('GTM');
+    if (/(workflow|automation|internal|productivity|velocity|operations)/.test(concern)) categories.add('Productivity');
+
+    return Array.from(categories);
+}
+
 function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
     const filtered = clusters.filter((cluster) => {
         if (timeHorizon === '30d') {
@@ -398,6 +413,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         return true;
     });
 
+    const preferredCategories = preferredCategoriesFromPreferences(preferences);
     const scored = filtered.map((cluster) => {
         const trust = computeTrust(cluster);
         const impact = computeImpact(cluster);
@@ -413,14 +429,18 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         // Penalize low-match items when user provided explicit personalization.
         const lowMatchPenalty = hasPersonalization && leaderFitDetails.personalizationMatch < 0.2 ? 1.35 : 0;
         const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 0.9 : 0;
+        const focusCategoryMatch = preferredCategories.includes(cluster.category);
+        const focusPriority = hasPersonalization && focusCategoryMatch ? 1 : 0;
+        const focusBoost = focusPriority ? 2.4 : 0;
 
-        const score = trust * impact * urgency * leaderFitDetails.score - noise - lowMatchPenalty - mismatchPenalty;
+        const score = trust * impact * urgency * leaderFitDetails.score + focusBoost - noise - lowMatchPenalty - mismatchPenalty;
         return {
             ...cluster,
             ranking: {
                 trust,
                 impact,
                 urgency,
+                focusPriority,
                 leaderFit: leaderFitDetails.score,
                 personalizationMatch: leaderFitDetails.personalizationMatch,
                 roleMatch: leaderFitDetails.roleMatch,
@@ -432,7 +452,12 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         };
     });
 
-    scored.sort((a, b) => b.ranking.score - a.ranking.score);
+    scored.sort((a, b) => {
+        if ((b.ranking.focusPriority || 0) !== (a.ranking.focusPriority || 0)) {
+            return (b.ranking.focusPriority || 0) - (a.ranking.focusPriority || 0);
+        }
+        return b.ranking.score - a.ranking.score;
+    });
     return scored;
 }
 
