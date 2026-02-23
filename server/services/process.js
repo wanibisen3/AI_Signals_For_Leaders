@@ -430,7 +430,8 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         const lowMatchPenalty = hasPersonalization && leaderFitDetails.personalizationMatch < 0.2 ? 1.35 : 0;
         const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 0.9 : 0;
         const focusCategoryMatch = preferredCategories.includes(cluster.category);
-        const focusPriority = hasPersonalization && focusCategoryMatch ? 1 : 0;
+        const focusSemanticMatch = (leaderFitDetails.concernMatch >= 0.3) || (leaderFitDetails.areaMatch >= 0.3);
+        const focusPriority = hasPersonalization && (focusCategoryMatch || focusSemanticMatch) ? 1 : 0;
         const focusBoost = focusPriority ? 2.4 : 0;
 
         const score = trust * impact * urgency * leaderFitDetails.score + focusBoost - noise - lowMatchPenalty - mismatchPenalty;

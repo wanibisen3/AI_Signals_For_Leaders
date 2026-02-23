@@ -127,8 +127,20 @@ async function runPipeline({
     const deduped = deduplicateItems(normalized);
     const clusters = clusterItems(deduped);
     const ranked = scoreAndRankClusters(clusters, preferences, timeHorizon);
+    const hasPersonalization = Boolean(
+        preferences?.role ||
+        preferences?.mainConcern ||
+        (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length)
+    );
+    const requestedLimit = Number(limit);
+    const focusQuota = hasPersonalization ? Math.ceil(requestedLimit * 0.75) : 0;
+    const focusFirst = ranked.filter((cluster) => (cluster?.ranking?.focusPriority || 0) > 0);
+    const others = ranked.filter((cluster) => (cluster?.ranking?.focusPriority || 0) === 0);
+    const prioritized = hasPersonalization
+        ? [...focusFirst.slice(0, focusQuota), ...others, ...focusFirst.slice(focusQuota)]
+        : ranked;
 
-    const topClusters = ranked.slice(0, Number(limit));
+    const topClusters = prioritized.slice(0, requestedLimit);
     const briefs = (await Promise.all(topClusters.map((cluster) => generateBrief(cluster, preferences))))
         .filter(Boolean);
 

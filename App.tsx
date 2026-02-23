@@ -479,6 +479,16 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
 const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
   user: User, briefs: Brief[], loading: boolean, onOpenBrief: (b: Brief) => void
 }) => {
+  const sortedBriefs = [...briefs].sort((a, b) => {
+    const aFocus = a.matchBreakdown?.focus || 0;
+    const bFocus = b.matchBreakdown?.focus || 0;
+    if (bFocus !== aFocus) return bFocus - aFocus;
+
+    const aScore = a.matchScore || 0;
+    const bScore = b.matchScore || 0;
+    return bScore - aScore;
+  });
+
   return (
     <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
       <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-slate-900 pl-4 sm:pl-6 lg:pl-8">
@@ -497,7 +507,7 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
         </div>
       ) : (
         <div className="grid gap-6 sm:gap-8 lg:gap-10">
-          {briefs.map(brief => (
+          {sortedBriefs.map(brief => (
             <div key={brief.id} className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-md transition-all group relative">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-5 sm:mb-6">
                 <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
@@ -725,7 +735,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
 // --- Main App Entry ---
 
 const App = () => {
-  const BRIEF_LIMIT = 12;
+  const BRIEF_LIMIT = 18;
   const AUTH_TOKEN_KEY = 'ai_signals_auth_token';
   const AUTH_USER_KEY = 'ai_signals_auth_user';
   const [user, setUser] = useState<User | null>(null);
