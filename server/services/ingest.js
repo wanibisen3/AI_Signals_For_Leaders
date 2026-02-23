@@ -28,7 +28,7 @@ async function fetchNews(tierFilter = 'ALL') {
                 source_trust: source.trust,
                 title: item.title || '',
                 link: item.link,
-                pubDate: item.pubDate ? new Date(item.pubDate) : new Date(),
+                pubDate: item.pubDate ? new Date(item.pubDate) : null,
                 contentSnippet: item.contentSnippet || item.summary || '',
                 content: item.content || '',
                 author: item.creator || item.author || 'Unknown'

@@ -101,6 +101,10 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
+function formatDateISO(value) {
+    return toDate(value).toISOString().split('T')[0];
+}
+
 function normalizeText(text = '') {
     return String(text || '')
         .toLowerCase()
@@ -144,7 +148,7 @@ function normalizeItems(rawItems) {
             source_tier: item.source_tier,
             source_trust: clamp(sourceTrust, 0.4, 1),
             author: item.author || 'Unknown',
-            published_at: item.pubDate || new Date(),
+            published_at: item.pubDate || null,
             url: item.link || '',
             canonical_url: canonicalizeUrl(item.link || ''),
             clean_title: cleanTitle,
@@ -387,6 +391,19 @@ function computeTrust(cluster) {
     return clamp(base + corroboration - tierCPenalty, 0.4, 1);
 }
 
+function computeFreshness(cluster) {
+    const publishedAt = toDate(cluster.representative?.published_at);
+    const now = Date.now();
+    const ageDays = Math.max(0, (now - publishedAt.getTime()) / (24 * 60 * 60 * 1000));
+
+    // Rapid decay after ~2 weeks; very old stories should not pin the top.
+    const freshness = clamp(Math.exp(-ageDays / 18), 0.15, 1);
+    return {
+        freshness,
+        ageDays
+    };
+}
+
 function preferredCategoriesFromPreferences(preferences = {}) {
     const categories = new Set();
     const areas = Array.isArray(preferences.decisionAreas) ? preferences.decisionAreas : [];
@@ -420,6 +437,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         const urgency = computeUrgency(cluster);
         const leaderFitDetails = computeLeaderFit(cluster, preferences);
         const noise = computeNoisePenalty(cluster);
+        const freshnessDetails = computeFreshness(cluster);
         const hasPersonalization = Boolean(
             preferences?.role ||
             preferences?.mainConcern ||
@@ -430,17 +448,25 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         const lowMatchPenalty = hasPersonalization && leaderFitDetails.personalizationMatch < 0.2 ? 1.35 : 0;
         const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 0.9 : 0;
         const focusCategoryMatch = preferredCategories.includes(cluster.category);
-        const focusSemanticMatch = (leaderFitDetails.concernMatch >= 0.3) || (leaderFitDetails.areaMatch >= 0.3);
+        const focusSemanticMatch = (leaderFitDetails.concernMatch >= 0.45) || (leaderFitDetails.areaMatch >= 0.45);
         const focusPriority = hasPersonalization && (focusCategoryMatch || focusSemanticMatch) ? 1 : 0;
         const focusBoost = focusPriority ? 2.4 : 0;
+        const stalePenalty = freshnessDetails.ageDays > 30 ? Math.min(1.6, (freshnessDetails.ageDays - 30) * 0.03) : 0;
 
-        const score = trust * impact * urgency * leaderFitDetails.score + focusBoost - noise - lowMatchPenalty - mismatchPenalty;
+        const score = trust * impact * urgency * leaderFitDetails.score * freshnessDetails.freshness
+            + focusBoost
+            - stalePenalty
+            - noise
+            - lowMatchPenalty
+            - mismatchPenalty;
         return {
             ...cluster,
             ranking: {
                 trust,
                 impact,
                 urgency,
+                freshness: freshnessDetails.freshness,
+                ageDays: Math.round(freshnessDetails.ageDays),
                 focusPriority,
                 leaderFit: leaderFitDetails.score,
                 personalizationMatch: leaderFitDetails.personalizationMatch,
@@ -479,7 +505,7 @@ function fallbackBrief(cluster, index = 0) {
             'Decide monitor vs pilot in next planning cycle'
         ],
         source: item.source,
-        date: new Date(item.published_at).toISOString().split('T')[0],
+        date: formatDateISO(item.published_at),
         category: cluster.category || 'Strategy',
         reviewStatus: 'pending_review',
         approvedAt: null,
@@ -543,7 +569,7 @@ Be concrete and conservative.`;
                 ? parsed.whatToConsiderNext.slice(0, 3)
                 : fallbackBrief(cluster).whatToConsiderNext,
             source: item.source,
-            date: new Date(item.published_at).toISOString().split('T')[0],
+            date: formatDateISO(item.published_at),
             category: parsed.category || cluster.category || 'Strategy',
             reviewStatus: 'pending_review',
             approvedAt: null,
