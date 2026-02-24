@@ -31,15 +31,15 @@ const Icon = ({ name, className = "" }: { name: string, className?: string }) =>
 
 const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void }) => (
   <div className="bg-gradient-to-b from-white via-slate-50/40 to-white min-h-screen selection:bg-primary selection:text-white">
-    <nav className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 h-20 flex items-center justify-between gap-3">
+    <nav className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:h-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shrink-0">
           <Icon name="analytics" className="text-2xl" />
         </div>
-        <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 leading-none whitespace-nowrap">AI Signals</span>
+        <span className="text-lg sm:text-2xl font-black tracking-tight text-slate-900 leading-none">AI Signals for Leaders</span>
       </div>
-      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-        <button onClick={() => onAuth('signin')} className="text-base sm:text-lg font-semibold text-slate-500 hover:text-slate-900 transition-colors">Sign In</button>
+      <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 sm:gap-6 shrink-0">
+        <button onClick={() => onAuth('signin')} className="text-base sm:text-lg font-semibold text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap">Sign In</button>
         <Button onClick={() => onAuth('signup')} className="rounded-full px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">Create Account</Button>
       </div>
     </nav>
@@ -59,7 +59,6 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
       </p>
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         <Button onClick={() => onAuth('signup')} className="px-12 py-5 text-lg rounded-full">Get Started</Button>
-        <Button onClick={() => onAuth('signin')} variant="secondary" className="px-12 py-5 text-lg rounded-full">View Demo Brief</Button>
       </div>
     </header>
 
@@ -404,7 +403,7 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
           <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-sm">
             <Icon name="analytics" className="text-2xl" />
           </div>
-          <span className="text-2xl font-black tracking-tighter text-slate-900">AI Signals</span>
+          <span className="text-2xl font-black tracking-tighter text-slate-900">AI Signals for Leaders</span>
         </div>
         <nav className="flex-1 px-6 space-y-2">
           {navItems.map(item => (
