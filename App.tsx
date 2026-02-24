@@ -31,16 +31,16 @@ const Icon = ({ name, className = "" }: { name: string, className?: string }) =>
 
 const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void }) => (
   <div className="bg-gradient-to-b from-white via-slate-50/40 to-white min-h-screen selection:bg-primary selection:text-white">
-    <nav className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white">
+    <nav className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 h-20 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shrink-0">
           <Icon name="analytics" className="text-2xl" />
         </div>
-        <span className="text-xl font-bold tracking-tight text-slate-900">AI Signals</span>
+        <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 leading-none whitespace-nowrap">AI Signals</span>
       </div>
-      <div className="flex items-center gap-8">
-        <button onClick={() => onAuth('signin')} className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Sign In</button>
-        <Button onClick={() => onAuth('signup')} className="rounded-full px-6">Create Account</Button>
+      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+        <button onClick={() => onAuth('signin')} className="text-base sm:text-lg font-semibold text-slate-500 hover:text-slate-900 transition-colors">Sign In</button>
+        <Button onClick={() => onAuth('signup')} className="rounded-full px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">Create Account</Button>
       </div>
     </nav>
 
@@ -51,10 +51,10 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
       <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-[0.2em] mb-10">
         The Strategic Advantage
       </div>
-      <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.05]">
-        AI signals that matter for <br /><span className="text-slate-400">product and business leaders</span>
+      <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.05]">
+        AI signals that matter for <br className="hidden md:block" /><span className="text-slate-400">product and business leaders</span>
       </h1>
-      <p className="text-2xl text-slate-500 font-medium mb-14 max-w-2xl mx-auto leading-relaxed">
+      <p className="text-lg sm:text-xl md:text-2xl text-slate-500 font-medium mb-14 max-w-2xl mx-auto leading-relaxed">
         We filter the noise of daily developments into structured decision briefs for the C-suite.
       </p>
       <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -97,12 +97,12 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
 
     <section className="py-32">
       <div className="max-w-4xl mx-auto px-8 text-center">
-        <h2 className="text-3xl font-bold mb-16">Who this is for</h2>
-        <div className="grid md:grid-cols-3 gap-6">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-10 sm:mb-16">Who this is for</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
           {['Product leaders', 'Business leaders', 'Founders'].map(role => (
-            <div key={role} className="p-8 border border-slate-100 rounded-2xl bg-white shadow-sm flex flex-col items-center">
-              <div className="w-2 h-2 bg-slate-900 rounded-full mb-4"></div>
-              <h4 className="font-bold text-slate-900">{role}</h4>
+            <div key={role} className="p-5 sm:p-8 border border-slate-100 rounded-2xl bg-white shadow-sm flex items-center justify-center gap-3 sm:flex-col sm:gap-0">
+              <div className="w-2.5 h-2.5 bg-slate-900 rounded-full sm:mb-4 shrink-0"></div>
+              <h4 className="font-bold text-slate-900 text-xl sm:text-2xl leading-none">{role}</h4>
             </div>
           ))}
         </div>
@@ -191,7 +191,12 @@ const AuthView = ({
           disabled={loading}
           className="w-full mb-6 py-3.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
-          <Icon name="login" className="text-base" />
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.655 32.657 29.223 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.844 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.27 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.001 12 24 12c3.059 0 5.844 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.27 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.132 35.091 26.679 36 24 36c-5.202 0-9.62-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.042 12.042 0 0 1-4.084 5.571h.001l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+          </svg>
           Continue with Google
         </button>
         <div className="flex items-center gap-3 mb-6">
@@ -315,22 +320,22 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-2xl">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Personalize your AI Signals</h2>
-          <p className="text-slate-500 text-xl font-medium">To curate your intelligence briefing.</p>
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Personalize your AI Signals</h2>
+          <p className="text-lg sm:text-xl text-slate-500 font-medium">To curate your intelligence briefing.</p>
         </div>
-        <div className="space-y-10 bg-white p-12 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="space-y-8 sm:space-y-10 bg-white p-6 sm:p-10 md:p-12 rounded-3xl border border-slate-100 shadow-sm">
 
           <div className="space-y-4">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">1. What is your role?</label>
-            <div className="grid grid-cols-2 gap-4">
+            <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400">1. What is your role?</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {['Product Leader', 'Business Leader', 'Founder', 'Other'].map((r) => (
                 <button
                   key={r}
                   onClick={() => setRole(r as Role)}
-                  className={`py-4 rounded-xl border text-sm font-bold transition-all ${role === r ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-500 hover:border-slate-900'}`}
+                  className={`py-4 px-3 rounded-xl border text-base sm:text-sm font-bold transition-all ${role === r ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-500 hover:border-slate-900'}`}
                 >
                   {r}
                 </button>
@@ -339,7 +344,7 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
           </div>
 
           <div className="space-y-4">
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">2. Primary Strategic Focus</label>
+            <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400">2. Primary Strategic Focus</label>
             <div className="flex flex-col gap-3">
               {focusOptions.map((opt) => {
                 const isSelected = isCustom ? opt === "Other (enter your own)" : concern === opt;
@@ -347,7 +352,7 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
                   <button
                     key={opt}
                     onClick={() => handleFocusSelect(opt)}
-                    className={`w-full text-left px-6 py-4 rounded-xl border text-sm font-bold transition-all flex justify-between items-center ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-slate-400'}`}
+                    className={`w-full text-left px-5 sm:px-6 py-4 rounded-xl border text-base sm:text-lg font-bold transition-all flex justify-between items-center ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-slate-400'}`}
                   >
                     {opt}
                     {isSelected && <Icon name="check" />}
@@ -360,7 +365,7 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
                   value={customConcern}
                   onChange={handleCustomChange}
                   placeholder="e.g. Navigating AI regulation in EU..."
-                  className="w-full rounded-xl border-slate-200 py-4 px-6 focus:ring-slate-900 focus:border-slate-900 animate-in fade-in slide-in-from-top-2"
+                  className="w-full rounded-xl border-slate-200 py-4 px-6 text-base focus:ring-slate-900 focus:border-slate-900 animate-in fade-in slide-in-from-top-2"
                   autoFocus
                 />
               )}
