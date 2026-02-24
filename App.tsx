@@ -11,10 +11,10 @@ const Button = ({ children, onClick, variant = 'primary', className = '', type =
 }) => {
   const base = "px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap";
   const variants = {
-    primary: "bg-slate-900 text-white hover:bg-slate-800 shadow-sm",
-    secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
-    ghost: "bg-transparent text-slate-500 hover:text-slate-900",
-    danger: "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100"
+    primary: "bg-gradient-to-r from-slate-900 to-slate-700 text-white hover:from-slate-800 hover:to-slate-700 shadow-sm hover:shadow-md",
+    secondary: "bg-white/90 backdrop-blur border border-slate-200 text-slate-700 hover:bg-white shadow-sm",
+    ghost: "bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/60",
+    danger: "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 shadow-sm"
   };
   return (
     <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -30,7 +30,7 @@ const Icon = ({ name, className = "" }: { name: string, className?: string }) =>
 // --- View: Marketing Home ---
 
 const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void }) => (
-  <div className="bg-white min-h-screen selection:bg-primary selection:text-white">
+  <div className="bg-gradient-to-b from-white via-slate-50/40 to-white min-h-screen selection:bg-primary selection:text-white">
     <nav className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white">
@@ -44,11 +44,14 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
       </div>
     </nav>
 
-    <header className="max-w-5xl mx-auto px-8 py-32 text-center">
+    <header className="max-w-5xl mx-auto px-8 py-24 md:py-32 text-center relative">
+      <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
+        <div className="w-[34rem] h-[34rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.10),transparent_65%)]"></div>
+      </div>
       <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-[0.2em] mb-10">
         The Strategic Advantage
       </div>
-      <h1 className="text-6xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.1]">
+      <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.05]">
         AI signals that matter for <br /><span className="text-slate-400">product and business leaders</span>
       </h1>
       <p className="text-2xl text-slate-500 font-medium mb-14 max-w-2xl mx-auto leading-relaxed">
@@ -60,29 +63,29 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
       </div>
     </header>
 
-    <section className="bg-slate-50 py-32 border-y border-slate-100">
+    <section className="bg-gradient-to-b from-slate-50 to-white py-24 md:py-32 border-y border-slate-100">
       <div className="max-w-6xl mx-auto px-8">
         <div className="text-center mb-20">
           <h2 className="text-3xl font-bold text-slate-900">Decisions, not news.</h2>
           <p className="text-slate-500 mt-4 text-lg">A focused perspective on the exponential curve of AI.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-16">
-          <div className="space-y-6">
-            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
+          <div className="space-y-6 p-7 rounded-2xl bg-white border border-slate-100 shadow-sm">
+            <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
               <Icon name="filter_list" className="text-2xl" />
             </div>
             <h3 className="text-xl font-bold">Filters AI Noise</h3>
             <p className="text-slate-600 leading-relaxed text-sm">We scan thousands of updates and research papers daily, distilling only the 1% that actually impacts your vertical.</p>
           </div>
-          <div className="space-y-6">
-            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
+          <div className="space-y-6 p-7 rounded-2xl bg-white border border-slate-100 shadow-sm">
+            <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
               <Icon name="lightbulb" className="text-2xl" />
             </div>
             <h3 className="text-xl font-bold">Explains why it matters</h3>
             <p className="text-slate-600 leading-relaxed text-sm">Beyond the headline: We provide contextual analysis on market shifts, competitor moves, and technological breakthroughs.</p>
           </div>
-          <div className="space-y-6">
-            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
+          <div className="space-y-6 p-7 rounded-2xl bg-white border border-slate-100 shadow-sm">
+            <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
               <Icon name="track_changes" className="text-2xl" />
             </div>
             <h3 className="text-xl font-bold">What to consider next</h3>
@@ -170,7 +173,7 @@ const AuthView = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-12 border border-slate-200">
+      <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-3xl shadow-xl p-12 border border-slate-200">
         <div className="text-center mb-10">
           <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg">
             <Icon name="analytics" className="text-3xl" />
@@ -490,7 +493,8 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
   });
 
   return (
-    <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
+    <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12 relative">
+      <div className="absolute -top-20 right-0 w-72 h-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(30,64,175,0.12),transparent_65%)] pointer-events-none"></div>
       <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-slate-900 pl-4 sm:pl-6 lg:pl-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
           {user.preferences.hasPersonalized ? `AI Signals for ${user.email.split('@')[0]}` : 'Top AI Developments'}
@@ -508,7 +512,7 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
       ) : (
         <div className="grid gap-6 sm:gap-8 lg:gap-10">
           {sortedBriefs.map(brief => (
-            <div key={brief.id} className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-md transition-all group relative">
+            <div key={brief.id} className="bg-white/95 backdrop-blur border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all group relative">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-5 sm:mb-6">
                 <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.source}</span>
@@ -572,7 +576,7 @@ const DetailView = ({ brief, onBack }: {
         <Icon name="west" className="text-lg" /> Back to Dashboard
       </button>
 
-      <div className="bg-white border border-slate-100 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-16 shadow-sm">
+      <div className="bg-white/95 backdrop-blur border border-slate-100 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-16 shadow-lg">
         <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 flex-wrap">
           {brief.matchScore && brief.matchScore > 65 && (
             <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
@@ -655,7 +659,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
       </div>
 
       <div className="space-y-10">
-        <section className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
+        <section className="bg-white/95 backdrop-blur border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
           <div className="p-10 border-b border-slate-50"><h3 className="text-xl font-black tracking-tight">Personalization Parameters</h3></div>
           <div className="p-10 space-y-8">
             <div className="grid md:grid-cols-2 gap-10">
@@ -685,7 +689,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
           </div>
         </section>
 
-        <section className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
+        <section className="bg-white/95 backdrop-blur border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
           <div className="p-10 border-b border-slate-50"><h3 className="text-xl font-black tracking-tight">Security & Credentials</h3></div>
           <div className="p-10 flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="max-w-md w-full">
@@ -702,7 +706,7 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
           </div>
         </section>
 
-        <section className="bg-white border border-slate-100 rounded-[2rem] p-10 shadow-sm">
+        <section className="bg-white/95 backdrop-blur border border-slate-100 rounded-[2rem] p-10 shadow-sm">
           <h3 className="text-xl font-black tracking-tight mb-8">Notification Preferences</h3>
           <div className="space-y-6">
             <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
