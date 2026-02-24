@@ -135,12 +135,14 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
 const AuthView = ({
   mode,
   onBack,
+  onSwitchMode,
   onSubmit,
   onGoogleAuth,
   loading
 }: {
   mode: 'signin' | 'signup',
   onBack: () => void,
+  onSwitchMode: (mode: 'signin' | 'signup') => void,
   onSubmit: (payload: { email: string, password: string, confirmPassword?: string }) => Promise<void>,
   onGoogleAuth: () => Promise<void>,
   loading: boolean
@@ -251,6 +253,16 @@ const AuthView = ({
           </Button>
         </form>
         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
+          <p className="text-sm text-slate-500 mb-4">
+            {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
+            <button
+              type="button"
+              onClick={() => onSwitchMode(mode === 'signin' ? 'signup' : 'signin')}
+              className="font-bold text-slate-900 hover:text-slate-700"
+            >
+              {mode === 'signin' ? 'Create Account' : 'Sign In'}
+            </button>
+          </p>
           <button onClick={onBack} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">
             Return to Homepage
           </button>
@@ -996,7 +1008,7 @@ const App = () => {
   }
 
   if (view === 'marketing') return <MarketingHome onAuth={setView} />;
-  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSubmit={handleAuthSubmit} onGoogleAuth={handleGoogleAuth} loading={authLoading} />;
+  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSwitchMode={setView} onSubmit={handleAuthSubmit} onGoogleAuth={handleGoogleAuth} loading={authLoading} />;
 
   if (!user) return <MarketingHome onAuth={setView} />;
 
