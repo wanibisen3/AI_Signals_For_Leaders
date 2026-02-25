@@ -1244,7 +1244,7 @@ const App = () => {
   };
 
   const loadDashboard = async () => {
-    const response = await fetch('/api/dashboard/state', { headers: { Authorization: authHeaders().Authorization } });
+    const response = await fetch('/api/dashboard', { headers: { Authorization: authHeaders().Authorization } });
     const data = await parseApiResponse(response);
     if (!response.ok || !data.success) throw new Error(data.error || 'Failed loading dashboard');
     const dashboard: DashboardState = {
@@ -1270,7 +1270,7 @@ const App = () => {
     setLoading(true);
     setStatusMessage('');
     try {
-      const response = await fetch('/api/dashboard/generate', {
+      const response = await fetch('/api/dashboard?action=generate', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ generationRequestId: reqId })
@@ -1296,7 +1296,7 @@ const App = () => {
 
   const handlePersonalizationComplete = async (prefs: UserPreferences) => {
     try {
-      const response = await fetch('/api/dashboard/personalization', {
+      const response = await fetch('/api/dashboard?action=personalization', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify(prefs)
@@ -1321,7 +1321,7 @@ const App = () => {
   };
 
   const loadCatalog = async () => {
-    const response = await fetch('/api/tokens/catalog');
+    const response = await fetch('/api/tokens');
     const data = await parseApiResponse(response);
     if (response.ok && data.success) {
       setTiers(data.tiers || []);
@@ -1331,7 +1331,7 @@ const App = () => {
   const startCheckout = async (packageCode: string) => {
     setCheckoutLoadingCode(packageCode);
     try {
-      const response = await fetch('/api/tokens/checkout', {
+      const response = await fetch('/api/tokens?action=checkout', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ packageCode })
@@ -1352,7 +1352,7 @@ const App = () => {
   const updatePassword = async (newPassword: string) => {
     setSettingsLoading(true);
     try {
-      const response = await fetch('/api/settings/password', {
+      const response = await fetch('/api/settings', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ newPassword })
@@ -1367,7 +1367,7 @@ const App = () => {
   const deleteAccount = async (confirmationText: string) => {
     setSettingsLoading(true);
     try {
-      const response = await fetch('/api/settings/delete-account', {
+      const response = await fetch('/api/settings?action=delete-account', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ confirmationText })
