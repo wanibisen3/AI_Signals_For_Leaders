@@ -241,11 +241,54 @@ async function requireAuth(req: AnyReq, res: AnyRes) {
 
 async function ensureUserInitialized(userId: string, email: string) {
   if (!supabaseAdmin) throw new Error('Supabase admin unavailable');
-  const { error } = await supabaseAdmin.rpc('ensure_user_initialized', {
+  const firstAttempt = await supabaseAdmin.rpc('ensure_user_initialized', {
     p_user_id: userId,
     p_email: email || ''
   });
-  if (error) throw error;
+  if (!firstAttempt.error) return;
+
+  const secondAttempt = await supabaseAdmin.rpc('ensure_user_initialized', {
+    p_email: email || '',
+    p_user_id: userId
+  });
+  if (!secondAttempt.error) return;
+
+  // Compatibility fallback for environments where SQL functions were not applied yet.
+  const userUpsert = await supabaseAdmin
+    .from('app_users')
+    .upsert({ user_id: userId, email: email || '', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (userUpsert.error) throw userUpsert.error;
+
+  const personalizationUpsert = await supabaseAdmin
+    .from('user_personalizations')
+    .upsert({ user_id: userId, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (personalizationUpsert.error) throw personalizationUpsert.error;
+
+  const balanceQuery = await supabaseAdmin
+    .from('user_token_balances')
+    .select('balance')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (balanceQuery.error) throw balanceQuery.error;
+
+  if (!balanceQuery.data) {
+    const insertBalance = await supabaseAdmin
+      .from('user_token_balances')
+      .insert({ user_id: userId, balance: 10 });
+    if (insertBalance.error) throw insertBalance.error;
+
+    const grantTx = await supabaseAdmin
+      .from('token_transactions')
+      .insert({
+        user_id: userId,
+        type: 'grant',
+        amount: 10,
+        reason: 'Initial token grant',
+        idempotency_key: `grant:init:${userId}`,
+        metadata: { source: 'system' }
+      });
+    if (grantTx.error && grantTx.error.code !== '23505') throw grantTx.error;
+  }
 }
 
 async function assertActiveUser(userId: string) {
@@ -255,7 +298,11 @@ async function assertActiveUser(userId: string) {
     .select('user_id, deleted_at')
     .eq('user_id', userId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    const message = String((error as any)?.message || '').toLowerCase();
+    if (message.includes('relation') && message.includes('app_users') && message.includes('does not exist')) return;
+    throw error;
+  }
   if (data?.deleted_at) {
     throw new Error('Account has been deactivated');
   }
@@ -268,7 +315,13 @@ async function getTokenBalance(userId: string) {
     .select('balance')
     .eq('user_id', userId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    const message = String((error as any)?.message || '').toLowerCase();
+    if (message.includes('relation') && message.includes('user_token_balances') && message.includes('does not exist')) {
+      return 0;
+    }
+    throw error;
+  }
   return Number(data?.balance || 0);
 }
 
@@ -279,8 +332,28 @@ async function getPersonalization(userId: string) {
     .select('*')
     .eq('user_id', userId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    const message = String((error as any)?.message || '').toLowerCase();
+    if (message.includes('relation') && message.includes('user_personalizations') && message.includes('does not exist')) {
+      return defaultPreferences();
+    }
+    throw error;
+  }
   return toPreferences(data);
+}
+
+async function loadUserStateSafe(userId: string) {
+  try {
+    return {
+      personalization: await getPersonalization(userId),
+      tokenBalance: await getTokenBalance(userId)
+    };
+  } catch {
+    return {
+      personalization: defaultPreferences(),
+      tokenBalance: 0
+    };
+  }
 }
 
 async function savePersonalization(userId: string, preferences: any) {
@@ -642,13 +715,13 @@ export async function handleAuthSignup(req: AnyReq, res: AnyRes) {
     }
 
     await ensureUserInitialized(signUpResult.data.user.id, signUpResult.data.user.email || email);
-    const personalization = await getPersonalization(signUpResult.data.user.id);
+    const state = await loadUserStateSafe(signUpResult.data.user.id);
 
     return res.json({
       success: true,
       token: session.access_token,
-      user: mapAuthUser(signUpResult.data.user, personalization),
-      tokenBalance: await getTokenBalance(signUpResult.data.user.id)
+      user: mapAuthUser(signUpResult.data.user, state.personalization),
+      tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'Signup failed' });
@@ -675,13 +748,13 @@ export async function handleAuthSignin(req: AnyReq, res: AnyRes) {
 
     await ensureUserInitialized(signInResult.data.user.id, signInResult.data.user.email || email);
     await assertActiveUser(signInResult.data.user.id);
-    const personalization = await getPersonalization(signInResult.data.user.id);
+    const state = await loadUserStateSafe(signInResult.data.user.id);
 
     return res.json({
       success: true,
       token: signInResult.data.session.access_token,
-      user: mapAuthUser(signInResult.data.user, personalization),
-      tokenBalance: await getTokenBalance(signInResult.data.user.id)
+      user: mapAuthUser(signInResult.data.user, state.personalization),
+      tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'Signin failed' });
@@ -697,12 +770,12 @@ export async function handleAuthSession(req: AnyReq, res: AnyRes) {
 
     await ensureUserInitialized(auth.user.id, auth.user.email || '');
     await assertActiveUser(auth.user.id);
-    const personalization = await getPersonalization(auth.user.id);
+    const state = await loadUserStateSafe(auth.user.id);
 
     return res.json({
       success: true,
-      user: mapAuthUser(auth.user, personalization),
-      tokenBalance: await getTokenBalance(auth.user.id)
+      user: mapAuthUser(auth.user, state.personalization),
+      tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'Session check failed' });
@@ -786,14 +859,14 @@ export async function handleAuthExchange(req: AnyReq, res: AnyRes) {
 
     await ensureUserInitialized(exchangeResult.data.user.id, exchangeResult.data.user.email || '');
     await assertActiveUser(exchangeResult.data.user.id);
-    const personalization = await getPersonalization(exchangeResult.data.user.id);
+    const state = await loadUserStateSafe(exchangeResult.data.user.id);
 
     const session = exchangeResult.data.session;
     return res.json({
       success: true,
       token: session.access_token,
-      user: mapAuthUser(exchangeResult.data.user, personalization),
-      tokenBalance: await getTokenBalance(exchangeResult.data.user.id)
+      user: mapAuthUser(exchangeResult.data.user, state.personalization),
+      tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'Auth exchange failed' });
