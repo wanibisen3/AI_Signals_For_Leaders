@@ -838,6 +838,14 @@ export async function handleAuthSignup(req: AnyReq, res: AnyRes) {
       return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
     }
 
+    const preReactivated = await tryReactivateDeletedAccount(email, password);
+    if (preReactivated) {
+      return res.json({
+        success: true,
+        ...preReactivated
+      });
+    }
+
     const signUpResult = await supabaseAuth.auth.signUp({ email, password });
     if (signUpResult.error) {
       if (isUserAlreadyRegisteredError(signUpResult.error)) {
@@ -853,25 +861,29 @@ export async function handleAuthSignup(req: AnyReq, res: AnyRes) {
     }
 
     let session = signUpResult.data.session || null;
+    let authUser = signUpResult.data.user || null;
     if (!session) {
       const signInResult = await supabaseAuth.auth.signInWithPassword({ email, password });
-      if (!signInResult.error && signInResult.data.session) session = signInResult.data.session;
+      if (!signInResult.error && signInResult.data.session && signInResult.data.user?.id) {
+        session = signInResult.data.session;
+        authUser = signInResult.data.user;
+      }
     }
 
-    if (!session || !signUpResult.data.user?.id) {
+    if (!session || !authUser?.id) {
       return res.status(400).json({
         success: false,
         error: 'Account created. Enable email login in Supabase (or confirm email) before signing in.'
       });
     }
 
-    await ensureUserInitialized(signUpResult.data.user.id, signUpResult.data.user.email || email);
-    const state = await loadUserStateSafe(signUpResult.data.user.id);
+    await ensureUserInitialized(authUser.id, authUser.email || email);
+    const state = await loadUserStateSafe(authUser.id);
 
     return res.json({
       success: true,
       token: session.access_token,
-      user: mapAuthUser(signUpResult.data.user, state.personalization),
+      user: mapAuthUser(authUser, state.personalization),
       tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
