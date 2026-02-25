@@ -1021,12 +1021,16 @@ export async function handleAuthSession(req: AnyReq, res: AnyRes) {
     const auth = await requireAuth(req, res);
     if (!auth) return;
     const intent = String(req.headers?.['x-auth-intent'] || '').trim().toLowerCase();
+    const provider = String((auth.user as any)?.app_metadata?.provider || '').trim().toLowerCase();
 
     await ensureUserInitialized(auth.user.id, auth.user.email || '');
     try {
       await assertActiveUser(auth.user.id);
     } catch (error: any) {
-      if (intent === 'signup' && isAccountDeactivatedError(error)) {
+      const shouldReactivate =
+        isAccountDeactivatedError(error) &&
+        (intent === 'signup' || provider === 'google');
+      if (shouldReactivate) {
         await reactivateSoftDeletedUser(auth.user.id, auth.user.email || '');
       } else {
         throw error;
