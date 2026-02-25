@@ -119,9 +119,13 @@ create table if not exists user_personalizations (
   role text not null default '',
   company_maturity text not null default '',
   main_focus text not null default '',
+  decision_areas text[] not null default '{}',
   keywords text[] not null default '{}',
   updated_at timestamptz not null default now()
 );
+
+alter table if exists user_personalizations
+  add column if not exists decision_areas text[] not null default '{}';
 
 create table if not exists user_token_balances (
   user_id uuid primary key,

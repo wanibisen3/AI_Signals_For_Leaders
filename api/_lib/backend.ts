@@ -62,6 +62,19 @@ function isMissingTableError(error: any, tableName: string) {
   );
 }
 
+function isMissingColumnError(error: any, tableName: string, columnName: string) {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    (message.includes('could not find the') &&
+      message.includes(columnName.toLowerCase()) &&
+      message.includes(tableName.toLowerCase()) &&
+      message.includes('schema cache')) ||
+    (message.includes('column') &&
+      message.includes(columnName.toLowerCase()) &&
+      message.includes('does not exist'))
+  );
+}
+
 function isMissingFunctionError(error: any, functionName: string) {
   const message = String(error?.message || '').toLowerCase();
   return (
@@ -388,16 +401,27 @@ async function loadUserStateSafe(userId: string) {
 async function savePersonalization(userId: string, preferences: any) {
   if (!supabaseAdmin) throw new Error('Supabase admin unavailable');
   const record = toPersonalizationRecord(preferences);
-  const { error } = await supabaseAdmin
+  const firstAttempt = await supabaseAdmin
     .from('user_personalizations')
     .upsert({ user_id: userId, ...record, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-  if (error) {
-    if (isMissingTableError(error, 'user_personalizations')) {
+  if (!firstAttempt.error) return record;
+
+  if (isMissingColumnError(firstAttempt.error, 'user_personalizations', 'decision_areas')) {
+    const { decision_areas: _unused, ...withoutDecisionAreas } = record;
+    const secondAttempt = await supabaseAdmin
+      .from('user_personalizations')
+      .upsert({ user_id: userId, ...withoutDecisionAreas, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    if (!secondAttempt.error) return record;
+    if (isMissingTableError(secondAttempt.error, 'user_personalizations')) {
       return record;
     }
-    throw error;
+    throw secondAttempt.error;
   }
-  return record;
+
+  if (isMissingTableError(firstAttempt.error, 'user_personalizations')) {
+    return record;
+  }
+  throw firstAttempt.error;
 }
 
 function personalizationChanged(before: any, afterRecord: any) {
