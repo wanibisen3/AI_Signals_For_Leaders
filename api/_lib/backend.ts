@@ -53,6 +53,11 @@ function looksLikeConfigured(value = '') {
   return Boolean(text) && !text.startsWith('your_');
 }
 
+function isMissingTableError(error: any, tableName: string) {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('relation') && message.includes(tableName.toLowerCase()) && message.includes('does not exist');
+}
+
 function isValidHttpUrl(value = '') {
   try {
     const parsed = new URL(value);
@@ -257,25 +262,37 @@ async function ensureUserInitialized(userId: string, email: string) {
   const userUpsert = await supabaseAdmin
     .from('app_users')
     .upsert({ user_id: userId, email: email || '', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-  if (userUpsert.error) throw userUpsert.error;
+  if (userUpsert.error) {
+    if (isMissingTableError(userUpsert.error, 'app_users')) return;
+    throw userUpsert.error;
+  }
 
   const personalizationUpsert = await supabaseAdmin
     .from('user_personalizations')
     .upsert({ user_id: userId, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-  if (personalizationUpsert.error) throw personalizationUpsert.error;
+  if (personalizationUpsert.error) {
+    if (isMissingTableError(personalizationUpsert.error, 'user_personalizations')) return;
+    throw personalizationUpsert.error;
+  }
 
   const balanceQuery = await supabaseAdmin
     .from('user_token_balances')
     .select('balance')
     .eq('user_id', userId)
     .maybeSingle();
-  if (balanceQuery.error) throw balanceQuery.error;
+  if (balanceQuery.error) {
+    if (isMissingTableError(balanceQuery.error, 'user_token_balances')) return;
+    throw balanceQuery.error;
+  }
 
   if (!balanceQuery.data) {
     const insertBalance = await supabaseAdmin
       .from('user_token_balances')
       .insert({ user_id: userId, balance: 10 });
-    if (insertBalance.error) throw insertBalance.error;
+    if (insertBalance.error) {
+      if (isMissingTableError(insertBalance.error, 'user_token_balances')) return;
+      throw insertBalance.error;
+    }
 
     const grantTx = await supabaseAdmin
       .from('token_transactions')
@@ -287,7 +304,10 @@ async function ensureUserInitialized(userId: string, email: string) {
         idempotency_key: `grant:init:${userId}`,
         metadata: { source: 'system' }
       });
-    if (grantTx.error && grantTx.error.code !== '23505') throw grantTx.error;
+    if (grantTx.error && grantTx.error.code !== '23505') {
+      if (isMissingTableError(grantTx.error, 'token_transactions')) return;
+      throw grantTx.error;
+    }
   }
 }
 
