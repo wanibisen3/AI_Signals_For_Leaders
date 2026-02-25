@@ -306,14 +306,18 @@ const AuthView = ({
   onSwitchMode,
   onSubmit,
   onGoogleAuth,
-  loading
+  loading,
+  externalError,
+  onClearExternalError
 }: {
   mode: 'signin' | 'signup',
   onBack: () => void,
   onSwitchMode: (mode: 'signin' | 'signup') => void,
   onSubmit: (payload: { email: string, password: string, confirmPassword?: string }) => Promise<void>,
   onGoogleAuth: () => Promise<void>,
-  loading: boolean
+  loading: boolean,
+  externalError?: string,
+  onClearExternalError?: () => void
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -322,6 +326,7 @@ const AuthView = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    onClearExternalError?.();
     setError('');
     if (mode === 'signup' && password !== confirmPassword) {
       setError('Passwords do not match');
@@ -335,6 +340,7 @@ const AuthView = ({
   };
 
   const handleGoogle = async () => {
+    onClearExternalError?.();
     setError('');
     try {
       await onGoogleAuth();
@@ -360,14 +366,14 @@ const AuthView = ({
         <div className="mb-6 p-1 rounded-xl bg-slate-100 border border-slate-200 grid grid-cols-2 gap-1">
           <button
             type="button"
-            onClick={() => onSwitchMode('signin')}
+            onClick={() => { onClearExternalError?.(); onSwitchMode('signin'); }}
             className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Sign In
           </button>
           <button
             type="button"
-            onClick={() => onSwitchMode('signup')}
+            onClick={() => { onClearExternalError?.(); onSwitchMode('signup'); }}
             className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Create Account
@@ -431,7 +437,7 @@ const AuthView = ({
               />
             </div>
           )}
-          {error && <p className="text-sm text-red-500 font-semibold">{error}</p>}
+          {(error || externalError) && <p className="text-sm text-red-500 font-semibold">{error || externalError}</p>}
           <Button type="submit" className="w-full py-4 text-base rounded-xl mt-4">
             {loading ? 'Please wait...' : (mode === 'signin' ? 'Sign In' : 'Create Account')}
           </Button>
@@ -441,13 +447,13 @@ const AuthView = ({
             {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
             <button
               type="button"
-              onClick={() => onSwitchMode(mode === 'signin' ? 'signup' : 'signin')}
+              onClick={() => { onClearExternalError?.(); onSwitchMode(mode === 'signin' ? 'signup' : 'signin'); }}
               className="font-bold text-slate-900 hover:text-slate-700"
             >
               {mode === 'signin' ? 'Create Account' : 'Sign In'}
             </button>
           </p>
-          <button onClick={onBack} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">
+          <button onClick={() => { onClearExternalError?.(); onBack(); }} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">
             Return to Homepage
           </button>
         </div>
@@ -1120,6 +1126,7 @@ const App = () => {
   const [generationRequestId, setGenerationRequestId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusOutOfTokens, setStatusOutOfTokens] = useState(false);
+  const [authGlobalError, setAuthGlobalError] = useState('');
 
   const persistUser = (nextUser: User, token: string) => {
     localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -1157,6 +1164,7 @@ const App = () => {
 
   const handleAuthSubmit = async ({ email, password }: { email: string, password: string }) => {
     setAuthLoading(true);
+    setAuthGlobalError('');
     try {
       const endpoint = view === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
       const response = await fetch(endpoint, {
@@ -1185,6 +1193,7 @@ const App = () => {
 
   const handleGoogleAuth = async () => {
     setAuthLoading(true);
+    setAuthGlobalError('');
     try {
       const redirectTo = `${window.location.origin}/auth/callback`;
       const response = await fetch('/api/auth/google/start', {
@@ -1408,7 +1417,12 @@ const App = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await parseApiResponse(response);
-        if (!response.ok || !data.success) throw new Error(data.error || 'Invalid session');
+        if (!response.ok || !data.success) {
+          if (data?.code === 'account_deleted') {
+            setAuthGlobalError(data.error || 'No user exists for this account. Please create a new account.');
+          }
+          throw new Error(data.error || 'Invalid session');
+        }
 
         const persistedUser = rawUser ? JSON.parse(rawUser) : null;
         const sessionUser: User = persistedUser?.email === data.user.email ? persistedUser : data.user;
@@ -1469,7 +1483,20 @@ const App = () => {
   if (view === 'privacy') return <PrivacyPage onBack={() => setView('marketing')} />;
   if (view === 'terms') return <TermsPage onBack={() => setView('marketing')} />;
   if (view === 'contact') return <ContactPage onBack={() => setView('marketing')} />;
-  if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSwitchMode={setView} onSubmit={handleAuthSubmit} onGoogleAuth={handleGoogleAuth} loading={authLoading} />;
+  if (view === 'signin' || view === 'signup') {
+    return (
+      <AuthView
+        mode={view}
+        onBack={() => setView('marketing')}
+        onSwitchMode={setView}
+        onSubmit={handleAuthSubmit}
+        onGoogleAuth={handleGoogleAuth}
+        loading={authLoading}
+        externalError={authGlobalError}
+        onClearExternalError={() => setAuthGlobalError('')}
+      />
+    );
+  }
 
   if (!user) return <MarketingHome onAuth={setView} onNavigate={setView} />;
 
