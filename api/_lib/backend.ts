@@ -101,6 +101,15 @@ function isValidHttpUrl(value = '') {
   }
 }
 
+function isLocalhostUrl(value = '') {
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
 function initClients() {
   if (testOverrides) {
     supabaseAuth = testOverrides.auth ?? null;
@@ -208,7 +217,14 @@ function getAuthToken(req: AnyReq) {
 
 function getRequestOrigin(req: AnyReq) {
   const explicitOrigin = String(process.env.PUBLIC_APP_URL || '').trim();
-  if (explicitOrigin) return explicitOrigin.replace(/\/+$/, '');
+  if (explicitOrigin) {
+    const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim();
+    const host = forwardedHost || String(req.headers?.host || '').trim();
+    const hostLooksLocal = host.includes('localhost') || host.includes('127.0.0.1');
+    if (!isLocalhostUrl(explicitOrigin) || hostLooksLocal) {
+      return explicitOrigin.replace(/\/+$/, '');
+    }
+  }
 
   const forwardedProto = String(req.headers?.['x-forwarded-proto'] || '').split(',')[0].trim();
   const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim();
@@ -1069,6 +1085,9 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
     const fallbackRedirect = origin ? `${origin}/auth/callback` : undefined;
     const redirectToInput = String(body?.redirectTo || fallbackRedirect || '').trim();
     let redirectTo = redirectToInput;
+    if (redirectTo && isLocalhostUrl(redirectTo) && origin && !origin.includes('localhost')) {
+      redirectTo = `${origin}/auth/callback`;
+    }
     if (redirectTo) {
       try {
         const u = new URL(redirectTo);
