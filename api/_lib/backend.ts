@@ -87,6 +87,11 @@ function isAccountDeactivatedError(error: any) {
   return String(error?.message || '').toLowerCase().includes('account has been deactivated');
 }
 
+function isUserAlreadyRegisteredError(error: any) {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('already registered') || message.includes('user already exists');
+}
+
 function isValidHttpUrl(value = '') {
   try {
     const parsed = new URL(value);
@@ -400,6 +405,48 @@ async function loadUserStateSafe(userId: string) {
       tokenBalance: 0
     };
   }
+}
+
+async function tryReactivateDeletedAccount(email: string, password: string) {
+  if (!supabaseAdmin || !supabaseAuth || !(supabaseAdmin as any).auth?.admin?.updateUserById) return null;
+
+  const { data: appUser, error: appUserError } = await supabaseAdmin
+    .from('app_users')
+    .select('user_id, deleted_at')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (appUserError) {
+    if (isMissingTableError(appUserError, 'app_users')) return null;
+    throw appUserError;
+  }
+  if (!appUser?.user_id || !appUser?.deleted_at) return null;
+
+  const updateResult = await (supabaseAdmin as any).auth.admin.updateUserById(appUser.user_id, {
+    password
+  });
+  if (updateResult.error) throw updateResult.error;
+
+  const { error: reactivateError } = await supabaseAdmin
+    .from('app_users')
+    .update({ deleted_at: null, updated_at: new Date().toISOString() })
+    .eq('user_id', appUser.user_id);
+  if (reactivateError && !isMissingTableError(reactivateError, 'app_users')) throw reactivateError;
+
+  const signInResult = await supabaseAuth.auth.signInWithPassword({ email, password });
+  if (signInResult.error || !signInResult.data.session || !signInResult.data.user?.id) {
+    return null;
+  }
+
+  await ensureUserInitialized(signInResult.data.user.id, signInResult.data.user.email || email);
+  await assertActiveUser(signInResult.data.user.id);
+  const state = await loadUserStateSafe(signInResult.data.user.id);
+
+  return {
+    token: signInResult.data.session.access_token,
+    user: mapAuthUser(signInResult.data.user, state.personalization),
+    tokenBalance: state.tokenBalance
+  };
 }
 
 async function savePersonalization(userId: string, preferences: any) {
@@ -771,6 +818,15 @@ export async function handleAuthSignup(req: AnyReq, res: AnyRes) {
 
     const signUpResult = await supabaseAuth.auth.signUp({ email, password });
     if (signUpResult.error) {
+      if (isUserAlreadyRegisteredError(signUpResult.error)) {
+        const reactivated = await tryReactivateDeletedAccount(email, password);
+        if (reactivated) {
+          return res.json({
+            success: true,
+            ...reactivated
+          });
+        }
+      }
       return res.status(400).json({ success: false, error: signUpResult.error.message });
     }
 
