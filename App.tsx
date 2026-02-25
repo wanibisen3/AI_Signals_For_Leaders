@@ -29,21 +29,19 @@ const Icon = ({ name, className = "" }: { name: string, className?: string }) =>
 
 // --- View: Marketing Home ---
 
-const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void }) => (
+const MarketingHome = ({ onAuth, onNavigate }: { onAuth: (view: 'signin' | 'signup') => void, onNavigate: (view: 'about' | 'privacy' | 'terms' | 'contact') => void }) => (
   <div className="bg-gradient-to-b from-white via-slate-50/40 to-white min-h-screen selection:bg-primary selection:text-white">
     <nav className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:h-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div className="w-full flex items-center justify-between sm:justify-start sm:w-auto gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shrink-0">
-            <Icon name="analytics" className="text-2xl" />
-          </div>
-          <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-none">AI Signals for Leaders</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shrink-0">
+          <Icon name="analytics" className="text-2xl" />
         </div>
-        <button onClick={() => onAuth('signin')} className="text-base sm:hidden font-semibold text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap">Sign In</button>
+        <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-none">AI Signals for Leaders</span>
       </div>
-      <div className="w-full sm:w-auto flex items-center sm:justify-end gap-3 sm:gap-6 shrink-0">
-        <button onClick={() => onAuth('signin')} className="hidden sm:inline text-base sm:text-lg font-semibold text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap">Sign In</button>
-        <Button onClick={() => onAuth('signup')} className="w-full sm:w-auto rounded-full px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">Create Account</Button>
+      <div className="w-full sm:w-auto flex items-center sm:justify-end gap-3 shrink-0">
+        <Button onClick={() => onAuth('signin')} className="w-full sm:w-auto rounded-full px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">
+          <Icon name="login" className="text-base" /> Access Portal
+        </Button>
       </div>
     </nav>
 
@@ -114,20 +112,191 @@ const MarketingHome = ({ onAuth }: { onAuth: (view: 'signin' | 'signup') => void
     <footer className="bg-slate-900 text-slate-400 py-20">
       <div className="max-w-7xl mx-auto px-8 flex flex-col md:row justify-between items-center gap-12 border-t border-slate-800 pt-12">
         <div className="flex gap-12">
-          <a href="#" className="hover:text-white transition-colors">About</a>
-          <a href="#" className="hover:text-white transition-colors">Privacy</a>
-          <a href="#" className="hover:text-white transition-colors">Terms</a>
-          <a href="#" className="hover:text-white transition-colors">Contact</a>
+          <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors">About</button>
+          <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors">Privacy</button>
+          <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">Terms</button>
+          <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors">Contact</button>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-white rounded flex items-center justify-center text-slate-900">
             <Icon name="analytics" className="text-sm" />
           </div>
-          <p className="text-sm">© 2024 AI Signals for Leaders. All rights reserved.</p>
+          <p className="text-sm">© 2026 AI Signals for Business Leaders. All rights reserved.</p>
         </div>
       </div>
     </footer>
   </div>
+);
+
+const StaticPageLayout = ({ title, subtitle, children, onBack }: {
+  title: string;
+  subtitle: string;
+  children?: React.ReactNode;
+  onBack: () => void;
+}) => (
+  <div className="min-h-screen bg-gradient-to-b from-white to-slate-50/40">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 py-10">
+      <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 mb-8">
+        <Icon name="west" className="text-base" /> Back to Home
+      </button>
+      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6 sm:p-10">
+        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{title}</h1>
+        <p className="text-slate-500 mt-3 mb-8 text-base sm:text-lg">{subtitle}</p>
+        <div className="space-y-6 text-slate-700 leading-relaxed">
+          {children}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const AboutPage = ({ onBack }: { onBack: () => void }) => (
+  <StaticPageLayout
+    title="About AI Signals for Business Leaders"
+    subtitle="Enterprise intelligence briefs built for strategic decision-making."
+    onBack={onBack}
+  >
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Mission</h2>
+      <p>
+        AI Signals for Business Leaders exists to help executive teams make faster, better AI decisions.
+        We convert fast-moving AI news, research, and product updates into high-signal strategic briefs.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Product</h2>
+      <p>
+        The platform continuously scans trusted sources, ranks developments by executive relevance, and
+        generates concise briefings: what happened, why it matters, and what to consider next.
+      </p>
+      <p>
+        Our workflows are designed for product leaders, business leaders, and founders who need clear
+        prioritization rather than generic trend summaries.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Operator</h2>
+      <p>
+        Operated by <strong>Wani Bisen</strong> in Singapore.
+      </p>
+      <p>
+        Contact: <a className="text-slate-900 font-bold underline" href="mailto:ai.signals.for.leaders@gmail.com">ai.signals.for.leaders@gmail.com</a>
+      </p>
+    </section>
+  </StaticPageLayout>
+);
+
+const PrivacyPage = ({ onBack }: { onBack: () => void }) => (
+  <StaticPageLayout
+    title="Privacy Policy"
+    subtitle="Last updated: February 25, 2026"
+    onBack={onBack}
+  >
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Information We Collect</h2>
+      <p>
+        We collect account data (such as email), authentication metadata, and product usage data needed to deliver the service.
+        We may also store personalization settings (role, focus area, and preferences).
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">How We Use Information</h2>
+      <p>
+        We use data to provide sign-in, personalize ranking, improve brief quality, maintain platform security,
+        and support users.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Processors and Third Parties</h2>
+      <p>
+        We use third-party infrastructure and AI providers including Supabase (auth/data), Vercel (hosting),
+        and OpenAI (model processing). Data is processed only as required to operate core features.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Cookies and Local Storage</h2>
+      <p>
+        We use local storage and session mechanisms to keep users signed in and preserve preferences.
+        You can clear browser storage at any time.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Data Retention and Requests</h2>
+      <p>
+        We retain data for as long as needed to provide the service and meet legal obligations.
+        For access, correction, or deletion requests, contact
+        {' '}<a className="text-slate-900 font-bold underline" href="mailto:ai.signals.for.leaders@gmail.com">ai.signals.for.leaders@gmail.com</a>.
+      </p>
+    </section>
+  </StaticPageLayout>
+);
+
+const TermsPage = ({ onBack }: { onBack: () => void }) => (
+  <StaticPageLayout
+    title="Terms of Service"
+    subtitle="Last updated: February 25, 2026"
+    onBack={onBack}
+  >
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Use of Service</h2>
+      <p>
+        AI Signals for Business Leaders provides informational intelligence briefs for business planning support.
+        You are responsible for final decisions and independent verification.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Account Responsibility</h2>
+      <p>
+        You must keep your account credentials secure and are responsible for all activity under your account.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Acceptable Use</h2>
+      <p>
+        You agree not to misuse, reverse engineer, disrupt, or attempt unauthorized access to the service or its data.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">No Warranty</h2>
+      <p>
+        The service is provided on an "as is" and "as available" basis without warranties of any kind.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Governing Law</h2>
+      <p>
+        These Terms are governed by the laws of Singapore. Disputes shall be subject to the courts of Singapore.
+      </p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Contact</h2>
+      <p>
+        For legal questions, contact{' '}
+        <a className="text-slate-900 font-bold underline" href="mailto:ai.signals.for.leaders@gmail.com">ai.signals.for.leaders@gmail.com</a>.
+      </p>
+    </section>
+  </StaticPageLayout>
+);
+
+const ContactPage = ({ onBack }: { onBack: () => void }) => (
+  <StaticPageLayout
+    title="Contact"
+    subtitle="Enterprise inquiries, support, and legal requests."
+    onBack={onBack}
+  >
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Primary Contact</h2>
+      <p><strong>Wani Bisen</strong></p>
+      <p>Email: <a className="text-slate-900 font-bold underline" href="mailto:ai.signals.for.leaders@gmail.com">ai.signals.for.leaders@gmail.com</a></p>
+      <p>Location: Singapore</p>
+    </section>
+    <section>
+      <h2 className="text-xl font-black text-slate-900 mb-2">What to Include in Your Message</h2>
+      <p>
+        Please include your company name, topic (support, partnership, legal, privacy), and a concise request description.
+      </p>
+    </section>
+  </StaticPageLayout>
 );
 
 // --- View: Auth ---
@@ -188,6 +357,22 @@ const AuthView = ({
               ? 'Access your private AI intelligence briefing.'
               : 'Join a network of leaders making informed AI decisions.'}
           </p>
+        </div>
+        <div className="mb-6 p-1 rounded-xl bg-slate-100 border border-slate-200 grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            onClick={() => onSwitchMode('signin')}
+            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => onSwitchMode('signup')}
+            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            Create Account
+          </button>
         </div>
         <button
           type="button"
@@ -1007,10 +1192,14 @@ const App = () => {
     );
   }
 
-  if (view === 'marketing') return <MarketingHome onAuth={setView} />;
+  if (view === 'marketing') return <MarketingHome onAuth={setView} onNavigate={setView} />;
+  if (view === 'about') return <AboutPage onBack={() => setView('marketing')} />;
+  if (view === 'privacy') return <PrivacyPage onBack={() => setView('marketing')} />;
+  if (view === 'terms') return <TermsPage onBack={() => setView('marketing')} />;
+  if (view === 'contact') return <ContactPage onBack={() => setView('marketing')} />;
   if (view === 'signin' || view === 'signup') return <AuthView mode={view} onBack={() => setView('marketing')} onSwitchMode={setView} onSubmit={handleAuthSubmit} onGoogleAuth={handleGoogleAuth} loading={authLoading} />;
 
-  if (!user) return <MarketingHome onAuth={setView} />;
+  if (!user) return <MarketingHome onAuth={setView} onNavigate={setView} />;
 
   if (view === 'personalization') return <Personalization onComplete={handlePersonalizationComplete} />;
 
