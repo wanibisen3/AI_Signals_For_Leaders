@@ -1153,7 +1153,34 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
       });
     }
 
-    return res.json({ success: true, url: startResult.data.url });
+    let oauthUrl = startResult.data.url;
+    try {
+      const authUrl = new URL(oauthUrl);
+      authUrl.searchParams.set('redirect_to', redirectTo);
+      oauthUrl = authUrl.toString();
+    } catch {
+      // keep original oauth URL if parsing fails
+    }
+
+    if (isProdRequest) {
+      try {
+        const parsed = new URL(oauthUrl);
+        const returnedRedirect = String(parsed.searchParams.get('redirect_to') || '').trim();
+        if (!returnedRedirect || isLocalhostUrl(returnedRedirect)) {
+          return res.status(500).json({
+            success: false,
+            error: 'OAuth redirect misconfigured: provider redirect URL resolved to localhost'
+          });
+        }
+      } catch {
+        return res.status(500).json({
+          success: false,
+          error: 'OAuth redirect misconfigured: provider URL is invalid'
+        });
+      }
+    }
+
+    return res.json({ success: true, url: oauthUrl });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error?.message || 'Google auth start failed' });
   }
