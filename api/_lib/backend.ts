@@ -235,6 +235,21 @@ function getRequestOrigin(req: AnyReq) {
 }
 
 function getForwardedRequestOrigin(req: AnyReq) {
+  const explicitOriginHeader = String(req.headers?.origin || '').trim();
+  if (isValidHttpUrl(explicitOriginHeader)) {
+    return explicitOriginHeader.replace(/\/+$/, '');
+  }
+
+  const referer = String(req.headers?.referer || '').trim();
+  if (isValidHttpUrl(referer)) {
+    try {
+      const parsed = new URL(referer);
+      return `${parsed.protocol}//${parsed.host}`;
+    } catch {
+      // fallback below
+    }
+  }
+
   const forwardedProto = String(req.headers?.['x-forwarded-proto'] || '').split(',')[0].trim();
   const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim();
   const host = forwardedHost || String(req.headers?.host || '').trim();
@@ -1107,6 +1122,12 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
     // On production requests, always force callback to the production host.
     if (isProdRequest && trustedOrigin) {
       redirectTo = `${trustedOrigin}/auth/callback`;
+    }
+    if (isProdRequest && isLocalhostUrl(redirectTo)) {
+      return res.status(500).json({
+        success: false,
+        error: 'OAuth redirect misconfigured: production callback resolved to localhost'
+      });
     }
     if (redirectTo) {
       try {
