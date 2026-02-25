@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { User, UserPreferences, ViewState, Brief, Role, CompanySize, DecisionArea } from './types';
-import { MOCK_BRIEFS } from './constants';
+import { User, UserPreferences, ViewState, Brief, Role, CompanySize, DecisionArea, TokenTier, DashboardState } from './types';
 
 // --- Shared Components ---
 
@@ -683,8 +682,24 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
 
 // --- View: Dashboard ---
 
-const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
-  user: User, briefs: Brief[], loading: boolean, onOpenBrief: (b: Brief) => void
+const DashboardView = ({
+  user,
+  briefs,
+  loading,
+  tokenBalance,
+  onOpenBrief,
+  onGenerate,
+  onOpenPersonalization,
+  onOpenBilling
+}: {
+  user: User;
+  briefs: Brief[];
+  loading: boolean;
+  tokenBalance: number;
+  onOpenBrief: (b: Brief) => void;
+  onGenerate: () => void;
+  onOpenPersonalization: () => void;
+  onOpenBilling: () => void;
 }) => {
   const sortedBriefs = [...briefs].sort((a, b) => {
     const aFocus = a.matchBreakdown?.focus || 0;
@@ -708,10 +723,46 @@ const DashboardView = ({ user, briefs, loading, onOpenBrief }: {
         </p>
       </div>
 
+      <div className="mb-6 grid gap-4 md:grid-cols-[1.1fr_1fr]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Personalization</p>
+              <p className="text-sm font-semibold text-slate-700">Role: {user.preferences.role || 'Not set'}</p>
+              <p className="text-sm font-semibold text-slate-700">Company maturity: {user.preferences.companySize || 'Not set'}</p>
+              <p className="text-sm font-semibold text-slate-700">Main focus: {user.preferences.mainConcern || 'Not set'}</p>
+              <p className="text-sm font-semibold text-slate-700">
+                Keywords: {user.preferences.keywords?.length ? user.preferences.keywords.join(', ') : 'Not set'}
+              </p>
+            </div>
+            <Button variant="secondary" className="rounded-full" onClick={onOpenPersonalization}>Edit Personalization</Button>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Token Balance</p>
+          <p className="text-3xl font-black text-slate-900 mb-4">{tokenBalance}</p>
+          <div className="flex gap-2">
+            <Button className="rounded-full" onClick={onGenerate} disabled={loading || tokenBalance <= 0}>
+              Generate Briefs (1 token)
+            </Button>
+            <Button variant="secondary" className="rounded-full" onClick={onOpenBilling}>Buy Tokens</Button>
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 space-y-4">
           <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
           <p className="text-slate-500 font-bold animate-pulse">Analyzing AI signals...</p>
+        </div>
+      ) : sortedBriefs.length === 0 ? (
+        <div className="bg-white border border-slate-100 rounded-3xl p-10 text-center shadow-sm">
+          <h3 className="text-2xl font-black text-slate-900 mb-2">No briefs yet</h3>
+          <p className="text-slate-500 mb-6">Generate your first brief batch. It costs 1 token.</p>
+          <div className="flex justify-center gap-3">
+            <Button onClick={onGenerate} disabled={tokenBalance <= 0}>Generate Briefs (1 token)</Button>
+            <Button variant="secondary" onClick={onOpenBilling}>Buy Tokens</Button>
+          </div>
         </div>
       ) : (
         <div className="grid gap-6 sm:gap-8 lg:gap-10">
@@ -854,87 +905,206 @@ const DetailView = ({ brief, onBack }: {
 
 // --- View: Settings ---
 
-const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => void }) => {
+const SettingsView = ({
+  onUpdatePassword,
+  onDeleteAccount,
+  loading
+}: {
+  onUpdatePassword: (password: string) => Promise<void>;
+  onDeleteAccount: (confirmation: string) => Promise<void>;
+  loading: boolean;
+}) => {
+  const [password, setPassword] = useState('');
+  const [confirmText, setConfirmText] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const submitPassword = async () => {
+    setError('');
+    setSuccess('');
+    try {
+      await onUpdatePassword(password);
+      setPassword('');
+      setSuccess('Password updated.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update password');
+    }
+  };
+
+  const submitDelete = async () => {
+    setError('');
+    setSuccess('');
+    try {
+      await onDeleteAccount(confirmText);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete account');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
       <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-slate-900 pl-4 sm:pl-6 lg:pl-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Settings</h1>
-        <p className="text-slate-500 mt-3 text-base sm:text-lg font-medium">Configure your intelligence parameters.</p>
+        <p className="text-slate-500 mt-3 text-base sm:text-lg font-medium">Account security and lifecycle controls.</p>
       </div>
 
-      <div className="space-y-10">
-        <section className="bg-white/95 backdrop-blur border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
-          <div className="p-10 border-b border-slate-50"><h3 className="text-xl font-black tracking-tight">Personalization Parameters</h3></div>
-          <div className="p-10 space-y-8">
-            <div className="grid md:grid-cols-2 gap-10">
-              <div className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Executive Role</label>
-                <select className="w-full rounded-xl border-slate-200 py-3 font-semibold" defaultValue={user.preferences.role}>
-                  <option>Product Leader</option>
-                  <option>Business Leader</option>
-                  <option>Founder</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Company Maturity</label>
-                <select className="w-full rounded-xl border-slate-200 py-3 font-semibold" defaultValue={user.preferences.companySize}>
-                  <option>Startup</option>
-                  <option>Growing</option>
-                  <option>Large</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main Focus</label>
-              <input type="text" className="w-full rounded-xl border-slate-200 py-3 font-semibold" defaultValue={user.preferences.mainConcern || 'Optimizing team velocity with Generative AI'} />
-            </div>
-            <Button onClick={() => alert('Preferences updated')} className="px-10 rounded-full">Save Configuration</Button>
+      <div className="space-y-8">
+        <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-sm">
+          <h3 className="text-xl font-black tracking-tight mb-4">Update Password</h3>
+          <p className="text-sm text-slate-500 mb-4">Use at least 8 characters.</p>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="New password"
+            className="w-full md:max-w-md rounded-xl border-slate-200 py-3 mb-4"
+          />
+          <div>
+            <Button onClick={submitPassword} disabled={loading || password.length < 8}>Update Password</Button>
           </div>
         </section>
 
-        <section className="bg-white/95 backdrop-blur border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
-          <div className="p-10 border-b border-slate-50"><h3 className="text-xl font-black tracking-tight">Security & Credentials</h3></div>
-          <div className="p-10 flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="max-w-md w-full">
-              <p className="font-bold text-slate-900 mb-2">Change Account Password</p>
-              <p className="text-sm text-slate-400 mb-6">Last updated 14 days ago.</p>
-              <Button variant="secondary" className="rounded-full px-8">Update Password</Button>
-            </div>
-            <div className="h-20 w-px bg-slate-50 hidden md:block"></div>
-            <div className="flex-1 text-right md:text-left">
-              <p className="font-bold text-slate-900 mb-2">Two-Factor Authentication</p>
-              <p className="text-sm text-slate-400 mb-6">Add an extra layer of security to your brief access.</p>
-              <Button variant="secondary" className="rounded-full px-8">Enable 2FA</Button>
-            </div>
+        <section className="bg-red-50 border border-red-100 rounded-3xl p-8">
+          <h3 className="text-xl font-black text-red-800 mb-3">Delete Account</h3>
+          <p className="text-slate-600 mb-4">Type <strong>DELETE</strong> to confirm account deletion.</p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="DELETE"
+            className="w-full md:max-w-md rounded-xl border-red-200 py-3 mb-4"
+          />
+          <div>
+            <Button variant="danger" onClick={submitDelete} disabled={loading || confirmText !== 'DELETE'}>
+              Delete Account
+            </Button>
           </div>
         </section>
 
-        <section className="bg-white/95 backdrop-blur border border-slate-100 rounded-[2rem] p-10 shadow-sm">
-          <h3 className="text-xl font-black tracking-tight mb-8">Notification Preferences</h3>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl">
-              <div>
-                <p className="font-bold text-slate-900 text-lg">Weekly Signal Digest</p>
-                <p className="text-sm text-slate-500 font-medium">Executive summary of the week's most critical shifts.</p>
-              </div>
-              <input type="checkbox" defaultChecked className="w-12 h-6 rounded-full text-slate-900 focus:ring-slate-900 cursor-pointer" />
-            </div>
-            <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl opacity-50">
-              <div>
-                <p className="font-bold text-slate-900 text-lg">Instant Breakthrough Alerts</p>
-                <p className="text-sm text-slate-500 font-medium text-red-500">Reserved for industry-shifting events only.</p>
-              </div>
-              <input type="checkbox" className="w-12 h-6 rounded-full text-slate-900 focus:ring-slate-900 cursor-pointer" />
-            </div>
-          </div>
-        </section>
+        {error && <p className="text-sm text-red-600 font-semibold">{error}</p>}
+        {success && <p className="text-sm text-green-700 font-semibold">{success}</p>}
+      </div>
+    </div>
+  );
+};
 
-        <section className="bg-red-50/50 border border-red-100 rounded-[2rem] p-10 text-center">
-          <h3 className="text-xl font-black text-red-800 mb-3">Terminate Portfolio</h3>
-          <p className="text-slate-500 mb-8 max-w-lg mx-auto">Once deleted, all historical data and personalization parameters will be permanently scrubbed from our systems.</p>
-          <Button variant="danger" className="rounded-full px-12">Delete Account Permanently</Button>
-        </section>
+const PersonalizationModal = ({
+  initial,
+  open,
+  onClose,
+  onSave,
+  saving
+}: {
+  initial: UserPreferences;
+  open: boolean;
+  onClose: () => void;
+  onSave: (prefs: UserPreferences) => Promise<void>;
+  saving: boolean;
+}) => {
+  const [role, setRole] = useState<Role | ''>(initial.role || '');
+  const [companySize, setCompanySize] = useState<CompanySize | ''>(initial.companySize || '');
+  const [mainConcern, setMainConcern] = useState(initial.mainConcern || '');
+  const [keywordsInput, setKeywordsInput] = useState((initial.keywords || []).join(', '));
+
+  useEffect(() => {
+    if (!open) return;
+    setRole(initial.role || '');
+    setCompanySize(initial.companySize || '');
+    setMainConcern(initial.mainConcern || '');
+    setKeywordsInput((initial.keywords || []).join(', '));
+  }, [initial, open]);
+
+  if (!open) return null;
+
+  const keywords = keywordsInput.split(',').map((x) => x.trim()).filter(Boolean);
+
+  return (
+    <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 p-6 shadow-2xl">
+        <h3 className="text-2xl font-black text-slate-900 mb-5">Edit Personalization</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Role</label>
+            <select className="w-full rounded-xl border-slate-200 py-3 mt-1" value={role} onChange={(e) => setRole(e.target.value as Role | '')}>
+              <option value="">Select role</option>
+              <option value="Product Leader">Product Leader</option>
+              <option value="Business Leader">Business Leader</option>
+              <option value="Founder">Founder</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Company Maturity</label>
+            <select className="w-full rounded-xl border-slate-200 py-3 mt-1" value={companySize} onChange={(e) => setCompanySize(e.target.value as CompanySize | '')}>
+              <option value="">Select maturity</option>
+              <option value="Startup">Startup</option>
+              <option value="Growing">Growing</option>
+              <option value="Large">Large</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main Focus</label>
+            <input className="w-full rounded-xl border-slate-200 py-3 mt-1" value={mainConcern} onChange={(e) => setMainConcern(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Keywords</label>
+            <input className="w-full rounded-xl border-slate-200 py-3 mt-1" value={keywordsInput} onChange={(e) => setKeywordsInput(e.target.value)} placeholder="e.g. pricing, copilots, healthcare" />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={() => onSave({
+              role,
+              companySize,
+              decisionAreas: initial.decisionAreas || [],
+              mainConcern,
+              keywords,
+              hasPersonalized: Boolean(role || companySize || mainConcern || keywords.length)
+            })}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BuyTokensModal = ({
+  open,
+  tiers,
+  onClose,
+  onCheckout,
+  loadingCode
+}: {
+  open: boolean;
+  tiers: TokenTier[];
+  onClose: () => void;
+  onCheckout: (code: string) => Promise<void>;
+  loadingCode: string;
+}) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-white rounded-3xl border border-slate-200 p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-black text-slate-900">Buy Tokens</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-900"><Icon name="close" /></button>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {tiers.map((tier) => (
+            <div key={tier.packageCode} className={`rounded-2xl border p-5 ${tier.mostPopular ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}>
+              {tier.mostPopular && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 mb-2">Most Popular</p>}
+              <p className="text-3xl font-black text-slate-900 mb-1">{tier.label}</p>
+              <p className="text-slate-500 mb-4">{tier.tokens} tokens</p>
+              <Button onClick={() => onCheckout(tier.packageCode)} disabled={loadingCode === tier.packageCode} className="w-full">
+                {loadingCode === tier.packageCode ? 'Redirecting...' : 'Checkout'}
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -943,7 +1113,6 @@ const SettingsView = ({ user, onUpdate }: { user: User, onUpdate: (u: User) => v
 // --- Main App Entry ---
 
 const App = () => {
-  const BRIEF_LIMIT = 18;
   const AUTH_TOKEN_KEY = 'ai_signals_auth_token';
   const AUTH_USER_KEY = 'ai_signals_auth_user';
   const [user, setUser] = useState<User | null>(null);
@@ -951,6 +1120,16 @@ const App = () => {
   const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authBootstrapped, setAuthBootstrapped] = useState(false);
+  const [briefs, setBriefs] = useState<Brief[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState(0);
+  const [personalizationOpen, setPersonalizationOpen] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
+  const [tiers, setTiers] = useState<TokenTier[]>([]);
+  const [checkoutLoadingCode, setCheckoutLoadingCode] = useState('');
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [generationRequestId, setGenerationRequestId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
 
   const persistUser = (nextUser: User, token: string) => {
     localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -1007,6 +1186,7 @@ const App = () => {
         : data.user;
       persistUser(nextUser, data.token);
       setUser(nextUser);
+      setTokenBalance(Number(data.tokenBalance || 0));
       setView(nextUser.preferences.hasPersonalized ? 'dashboard' : 'personalization');
     } finally {
       setAuthLoading(false);
@@ -1049,67 +1229,155 @@ const App = () => {
       clearPersistedSession();
       setUser(null);
       setSelectedBrief(null);
+      setBriefs([]);
+      setTokenBalance(0);
       setView('marketing');
     }
   };
 
-  const handlePersonalizationComplete = (prefs: UserPreferences) => {
+  const authHeaders = () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    };
+  };
+
+  const loadDashboard = async () => {
+    const response = await fetch('/api/dashboard/state', { headers: { Authorization: authHeaders().Authorization } });
+    const data = await parseApiResponse(response);
+    if (!response.ok || !data.success) throw new Error(data.error || 'Failed loading dashboard');
+    const dashboard: DashboardState = {
+      tokenBalance: Number(data.tokenBalance || 0),
+      personalization: data.personalization,
+      briefs: data.briefs || [],
+      hasBatch: Boolean(data.hasBatch),
+      latestBatch: data.latestBatch || null
+    };
+    setTokenBalance(dashboard.tokenBalance);
+    setBriefs(dashboard.briefs || []);
     if (user) {
-      const updatedUser = { ...user, preferences: prefs };
-      setUser(updatedUser);
+      const updated = { ...user, preferences: dashboard.personalization || user.preferences };
+      setUser(updated);
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      if (token) persistUser(updatedUser, token);
-      setView('dashboard');
-      fetchBriefs(prefs); // Fetch briefs when personalization is complete
+      if (token) persistUser(updated, token);
     }
   };
 
-  const [briefs, setBriefs] = useState<Brief[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchBriefs = async (prefs?: UserPreferences) => {
+  const triggerGeneration = async (requestId?: string) => {
+    const reqId = requestId || generationRequestId || crypto.randomUUID();
+    setGenerationRequestId(reqId);
     setLoading(true);
+    setStatusMessage('');
     try {
-      const effectivePreferences = prefs || user?.preferences || {
-        role: '',
-        companySize: '',
-        decisionAreas: [],
-        mainConcern: '',
-        hasPersonalized: false
-      };
-
-      const response = await fetch('/api/signals', {
+      const response = await fetch('/api/dashboard/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          preferences: effectivePreferences,
-          time_horizon: '30d',
-          tier_filter: 'ALL',
-          limit: BRIEF_LIMIT,
-          bypass_cache: true
-        })
+        headers: authHeaders(),
+        body: JSON.stringify({ generationRequestId: reqId })
       });
       const data = await parseApiResponse(response);
-      if (data.success) {
-        setBriefs(data.briefs);
-      } else {
-        console.error('Failed to fetch briefs:', data.error);
-        // Fallback to MOCK_BRIEFS on error for demo purposes
-        setBriefs(MOCK_BRIEFS);
+      if (!response.ok || !data.success) {
+        if (response.status === 402) {
+          setBillingOpen(true);
+          throw new Error('No tokens left. Please top up.');
+        }
+        throw new Error(data.error || 'Generation failed');
       }
+      setBriefs(data.briefs || []);
+      setTokenBalance(Number(data.balance || tokenBalance));
+      setStatusMessage('Briefs generated successfully.');
+      setGenerationRequestId(null);
     } catch (error) {
-      console.error('Error fetching briefs:', error);
-      setBriefs(MOCK_BRIEFS);
+      setStatusMessage(error instanceof Error ? error.message : 'Generation failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePersonalizationComplete = async (prefs: UserPreferences) => {
+    try {
+      const response = await fetch('/api/dashboard/personalization', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(prefs)
+      });
+      const data = await parseApiResponse(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to save personalization');
+      if (user) {
+        const updated = { ...user, preferences: data.personalization || prefs };
+        setUser(updated);
+        const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+        if (token) persistUser(updated, token);
+      }
+      if (data.briefs) setBriefs(data.briefs);
+      setTokenBalance(Number(data.tokenBalance || tokenBalance));
+      if (data.requiresTopUp) setBillingOpen(true);
+      setView('dashboard');
+      setPersonalizationOpen(false);
+      setStatusMessage(data.generated ? 'Personalization saved and briefs regenerated.' : 'Personalization saved.');
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Failed to save personalization');
+    }
+  };
+
+  const loadCatalog = async () => {
+    const response = await fetch('/api/tokens/catalog');
+    const data = await parseApiResponse(response);
+    if (response.ok && data.success) {
+      setTiers(data.tiers || []);
+    }
+  };
+
+  const startCheckout = async (packageCode: string) => {
+    setCheckoutLoadingCode(packageCode);
+    try {
+      const response = await fetch('/api/tokens/checkout', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ packageCode })
+      });
+      const data = await parseApiResponse(response);
+      if (!response.ok || !data.success || !data.url) throw new Error(data.error || 'Failed to create checkout session');
+      window.location.assign(data.url);
+    } finally {
+      setCheckoutLoadingCode('');
     }
   };
 
   const navigateToBrief = (brief: Brief) => {
     setSelectedBrief(brief);
     setView('detail');
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    setSettingsLoading(true);
+    try {
+      const response = await fetch('/api/settings/password', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ newPassword })
+      });
+      const data = await parseApiResponse(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to update password');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const deleteAccount = async (confirmationText: string) => {
+    setSettingsLoading(true);
+    try {
+      const response = await fetch('/api/settings/delete-account', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ confirmationText })
+      });
+      const data = await parseApiResponse(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to delete account');
+      await handleSignOut();
+    } finally {
+      setSettingsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1165,6 +1433,7 @@ const App = () => {
         const sessionUser: User = persistedUser?.email === data.user.email ? persistedUser : data.user;
         if (!active) return;
         setUser(sessionUser);
+        setTokenBalance(Number(data.tokenBalance || 0));
         setView(sessionUser.preferences?.hasPersonalized ? 'dashboard' : 'personalization');
       } catch {
         clearPersistedSession();
@@ -1177,6 +1446,30 @@ const App = () => {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (view !== 'dashboard' || !user) return;
+    loadDashboard().catch((error) => {
+      setStatusMessage(error instanceof Error ? error.message : 'Failed to load dashboard');
+    });
+  }, [view, user?.email]);
+
+  useEffect(() => {
+    loadCatalog().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') === 'success') {
+      setStatusMessage('Payment successful. Your token balance has been updated.');
+      setView('dashboard');
+      loadDashboard().catch(() => {});
+      window.history.replaceState({}, '', '/');
+    } else if (params.get('checkout') === 'cancel') {
+      setStatusMessage('Checkout cancelled.');
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   // --- Rendering Logic ---
@@ -1204,13 +1497,25 @@ const App = () => {
   if (view === 'personalization') return <Personalization onComplete={handlePersonalizationComplete} />;
 
   return (
-    <AppLayout activeView={view} setView={setView} user={user} onSignOut={handleSignOut}>
+    <>
+      <AppLayout activeView={view} setView={setView} user={user} onSignOut={handleSignOut}>
+        {statusMessage && (
+          <div className="px-4 sm:px-6 lg:px-12 pt-4">
+            <div className="max-w-5xl mx-auto rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">
+              {statusMessage}
+            </div>
+          </div>
+        )}
       {view === 'dashboard' && (
         <DashboardView
           user={user}
           briefs={briefs}
           loading={loading}
+          tokenBalance={tokenBalance}
           onOpenBrief={navigateToBrief}
+          onGenerate={() => triggerGeneration()}
+          onOpenPersonalization={() => setPersonalizationOpen(true)}
+          onOpenBilling={() => setBillingOpen(true)}
         />
       )}
       {view === 'detail' && selectedBrief && (
@@ -1221,11 +1526,27 @@ const App = () => {
       )}
       {view === 'settings' && (
         <SettingsView
-          user={user}
-          onUpdate={setUser}
+          onUpdatePassword={updatePassword}
+          onDeleteAccount={deleteAccount}
+          loading={settingsLoading}
         />
       )}
-    </AppLayout>
+      </AppLayout>
+      <PersonalizationModal
+        open={personalizationOpen}
+        initial={user.preferences}
+        onClose={() => setPersonalizationOpen(false)}
+        onSave={handlePersonalizationComplete}
+        saving={loading}
+      />
+      <BuyTokensModal
+        open={billingOpen}
+        tiers={tiers}
+        onClose={() => setBillingOpen(false)}
+        onCheckout={startCheckout}
+        loadingCode={checkoutLoadingCode}
+      />
+    </>
   );
 };
 

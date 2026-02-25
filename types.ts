@@ -8,12 +8,35 @@ export interface UserPreferences {
   companySize: CompanySize | '';
   decisionAreas: DecisionArea[];
   mainConcern: string;
+  keywords?: string[];
   hasPersonalized: boolean;
 }
 
 export interface User {
+  id?: string;
   email: string;
   preferences: UserPreferences;
+}
+
+export interface TokenTier {
+  packageCode: string;
+  currency: string;
+  amount: number;
+  tokens: number;
+  label: string;
+  mostPopular: boolean;
+}
+
+export interface DashboardState {
+  tokenBalance: number;
+  personalization: UserPreferences;
+  briefs: Brief[];
+  hasBatch: boolean;
+  latestBatch: {
+    id: string;
+    status: 'pending' | 'completed' | 'failed';
+    created_at?: string;
+  } | null;
 }
 
 export interface Brief {
@@ -39,6 +62,7 @@ export type ViewState =
   | 'marketing'
   | 'signin'
   | 'signup'
+  | 'billing_success'
   | 'about'
   | 'privacy'
   | 'terms'
