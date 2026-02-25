@@ -9,6 +9,7 @@ export interface UserPreferences {
   decisionAreas: DecisionArea[];
   mainConcern: string;
   keywords?: string[];
+  generateBriefs?: boolean;
   hasPersonalized: boolean;
 }
 

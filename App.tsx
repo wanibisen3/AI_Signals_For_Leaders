@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { User, UserPreferences, ViewState, Brief, Role, CompanySize, DecisionArea, DashboardState } from './types';
+import { User, UserPreferences, ViewState, Brief, Role, DecisionArea, DashboardState } from './types';
 
 // --- Shared Components ---
 
@@ -25,6 +25,29 @@ const Button = ({ children, onClick, variant = 'primary', className = '', type =
 const Icon = ({ name, className = "" }: { name: string, className?: string }) => (
   <span className={`material-icons-outlined select-none ${className}`}>{name}</span>
 );
+
+const OTHER_FOCUS_OPTION = 'Other (enter your own)';
+const FOCUS_OPTIONS = [
+  'Accelerating Product Innovation',
+  'Operational Efficiency & Cost',
+  'Risk, Compliance & Security',
+  'Market Strategy & Growth',
+  'Internal Workflows & Agents',
+  OTHER_FOCUS_OPTION
+];
+
+const inferDecisionAreasFromConcern = (value: string): DecisionArea[] => {
+  const text = value.toLowerCase();
+  const areas = new Set<DecisionArea>();
+
+  if (/(product|feature|roadmap|innovation|agent|workflow)/.test(text)) areas.add('Product');
+  if (/(cost|efficiency|budget|pricing|spend)/.test(text)) areas.add('Cost');
+  if (/(risk|compliance|security|privacy|regulation|policy)/.test(text)) areas.add('Risk');
+  if (/(market|growth|sales|go to market|gtm|customer|distribution)/.test(text)) areas.add('GTM');
+  if (/(productivity|operations|internal|automation|velocity)/.test(text)) areas.add('Productivity');
+
+  return Array.from(areas);
+};
 
 // --- View: Marketing Home ---
 
@@ -314,7 +337,7 @@ const AuthView = ({
   onBack: () => void,
   onSwitchMode: (mode: 'signin' | 'signup') => void,
   onSubmit: (payload: { email: string, password: string, confirmPassword?: string }) => Promise<void>,
-  onGoogleAuth: () => Promise<void>,
+  onGoogleAuth: (intent: 'signin' | 'signup') => Promise<void>,
   loading: boolean,
   externalError?: string,
   onClearExternalError?: () => void
@@ -343,7 +366,7 @@ const AuthView = ({
     onClearExternalError?.();
     setError('');
     try {
-      await onGoogleAuth();
+      await onGoogleAuth(mode);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google authentication failed');
     }
@@ -469,18 +492,10 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
   const [concern, setConcern] = useState('');
   const [customConcern, setCustomConcern] = useState('');
   const [isCustom, setIsCustom] = useState(false);
-
-  const focusOptions = [
-    "Accelerating Product Innovation",
-    "Operational Efficiency & Cost",
-    "Risk, Compliance & Security",
-    "Market Strategy & Growth",
-    "Internal Workflows & Agents",
-    "Other (enter your own)"
-  ];
+  const [generateBriefs, setGenerateBriefs] = useState(true);
 
   const handleFocusSelect = (opt: string) => {
-    if (opt === "Other (enter your own)") {
+    if (opt === OTHER_FOCUS_OPTION) {
       setIsCustom(true);
       setConcern(customConcern);
     } else {
@@ -494,27 +509,14 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
     setConcern(e.target.value);
   };
 
-  const inferDecisionAreasFromConcern = (value: string): DecisionArea[] => {
-    const text = value.toLowerCase();
-    const areas = new Set<DecisionArea>();
-
-    if (/(product|feature|roadmap|innovation|agent|workflow)/.test(text)) areas.add('Product');
-    if (/(cost|efficiency|budget|pricing|spend)/.test(text)) areas.add('Cost');
-    if (/(risk|compliance|security|privacy|regulation|policy)/.test(text)) areas.add('Risk');
-    if (/(market|growth|sales|go to market|gtm|customer|distribution)/.test(text)) areas.add('GTM');
-    if (/(productivity|operations|internal|automation|velocity)/.test(text)) areas.add('Productivity');
-
-    return Array.from(areas);
-  };
-
   const handleContinue = () => {
     const inferredDecisionAreas = inferDecisionAreasFromConcern(concern);
-    // Map simplified flow to existing data structure
     onComplete({
       role,
-      companySize: 'Growing', // Default
+      companySize: '',
       decisionAreas: inferredDecisionAreas,
       mainConcern: concern,
+      generateBriefs,
       hasPersonalized: true
     });
   };
@@ -550,8 +552,8 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
           <div className="space-y-4">
             <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400">2. Primary Strategic Focus</label>
             <div className="flex flex-col gap-3">
-              {focusOptions.map((opt) => {
-                const isSelected = isCustom ? opt === "Other (enter your own)" : concern === opt;
+              {FOCUS_OPTIONS.map((opt) => {
+                const isSelected = isCustom ? opt === OTHER_FOCUS_OPTION : concern === opt;
                 return (
                   <button
                     key={opt}
@@ -576,10 +578,20 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
             </div>
           </div>
 
+          <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
+            <input
+              type="checkbox"
+              checked={generateBriefs}
+              onChange={(e) => setGenerateBriefs(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+            />
+            Personalize and generate briefs now (costs 1 token)
+          </label>
+
           <div className="flex items-center justify-between pt-8 border-t border-slate-50">
             <button onClick={handleSkip} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">Skip</button>
             <Button onClick={handleContinue} className="px-12 py-4 rounded-full" disabled={!role || !concern}>
-              Continue to Dashboard
+              {generateBriefs ? 'Personalize and Generate Briefs' : 'Save Personalization'}
             </Button>
           </div>
         </div>
@@ -694,7 +706,6 @@ const DashboardView = ({
   loading,
   tokenBalance,
   onOpenBrief,
-  onGenerate,
   onOpenPersonalization,
   onOpenBilling
 }: {
@@ -703,7 +714,6 @@ const DashboardView = ({
   loading: boolean;
   tokenBalance: number;
   onOpenBrief: (b: Brief) => void;
-  onGenerate: () => void;
   onOpenPersonalization: () => void;
   onOpenBilling: () => void;
 }) => {
@@ -735,22 +745,15 @@ const DashboardView = ({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Personalization</p>
               <p className="text-sm font-semibold text-slate-700">Role: {user.preferences.role || 'Not set'}</p>
-              <p className="text-sm font-semibold text-slate-700">Company maturity: {user.preferences.companySize || 'Not set'}</p>
-              <p className="text-sm font-semibold text-slate-700">Main focus: {user.preferences.mainConcern || 'Not set'}</p>
-              <p className="text-sm font-semibold text-slate-700">
-                Keywords: {user.preferences.keywords?.length ? user.preferences.keywords.join(', ') : 'Not set'}
-              </p>
+              <p className="text-sm font-semibold text-slate-700">Focus area: {user.preferences.mainConcern || 'Not set'}</p>
             </div>
-            <Button variant="secondary" className="rounded-full" onClick={onOpenPersonalization}>Edit Personalization</Button>
+            <Button variant="secondary" className="rounded-full" onClick={onOpenPersonalization}>Personalize and Generate Briefs</Button>
           </div>
         </div>
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Token Balance</p>
           <p className="text-3xl font-black text-slate-900 mb-4">{tokenBalance}</p>
           <div className="flex gap-2">
-            <Button className="rounded-full" onClick={onGenerate} disabled={loading || tokenBalance <= 0}>
-              Generate Briefs (1 token)
-            </Button>
             <Button variant="secondary" className="rounded-full" onClick={onOpenBilling}>Buy Tokens</Button>
           </div>
         </div>
@@ -764,9 +767,9 @@ const DashboardView = ({
       ) : sortedBriefs.length === 0 ? (
         <div className="bg-white border border-slate-100 rounded-3xl p-10 text-center shadow-sm">
           <h3 className="text-2xl font-black text-slate-900 mb-2">No briefs yet</h3>
-          <p className="text-slate-500 mb-6">Generate your first brief batch. It costs 1 token.</p>
+          <p className="text-slate-500 mb-6">Set personalization and generate your first brief batch. It costs 1 token.</p>
           <div className="flex justify-center gap-3">
-            <Button onClick={onGenerate} disabled={tokenBalance <= 0}>Generate Briefs (1 token)</Button>
+            <Button onClick={onOpenPersonalization}>Personalize and Generate Briefs</Button>
             <Button variant="secondary" onClick={onOpenBilling}>Buy Tokens</Button>
           </div>
         </div>
@@ -1008,26 +1011,44 @@ const PersonalizationModal = ({
   saving: boolean;
 }) => {
   const [role, setRole] = useState<Role | ''>(initial.role || '');
-  const [companySize, setCompanySize] = useState<CompanySize | ''>(initial.companySize || '');
-  const [mainConcern, setMainConcern] = useState(initial.mainConcern || '');
-  const [keywordsInput, setKeywordsInput] = useState((initial.keywords || []).join(', '));
+  const [concern, setConcern] = useState(initial.mainConcern || '');
+  const [customConcern, setCustomConcern] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
+  const [generateBriefs, setGenerateBriefs] = useState(true);
 
   useEffect(() => {
     if (!open) return;
     setRole(initial.role || '');
-    setCompanySize(initial.companySize || '');
-    setMainConcern(initial.mainConcern || '');
-    setKeywordsInput((initial.keywords || []).join(', '));
+    const initialConcern = initial.mainConcern || '';
+    const isPresetFocus = FOCUS_OPTIONS.includes(initialConcern);
+    setConcern(initialConcern);
+    setCustomConcern(isPresetFocus ? '' : initialConcern);
+    setIsCustom(Boolean(initialConcern) && !isPresetFocus);
+    setGenerateBriefs(true);
   }, [initial, open]);
 
   if (!open) return null;
 
-  const keywords = keywordsInput.split(',').map((x) => x.trim()).filter(Boolean);
+  const handleFocusSelect = (opt: string) => {
+    if (opt === OTHER_FOCUS_OPTION) {
+      setIsCustom(true);
+      setConcern(customConcern);
+      return;
+    }
+    setIsCustom(false);
+    setConcern(opt);
+  };
+
+  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setCustomConcern(next);
+    setConcern(next);
+  };
 
   return (
     <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 p-6 shadow-2xl">
-        <h3 className="text-2xl font-black text-slate-900 mb-5">Edit Personalization</h3>
+        <h3 className="text-2xl font-black text-slate-900 mb-5">Personalize Briefs</h3>
         <div className="space-y-4">
           <div>
             <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Role</label>
@@ -1040,37 +1061,57 @@ const PersonalizationModal = ({
             </select>
           </div>
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Company Maturity</label>
-            <select className="w-full rounded-xl border-slate-200 py-3 mt-1" value={companySize} onChange={(e) => setCompanySize(e.target.value as CompanySize | '')}>
-              <option value="">Select maturity</option>
-              <option value="Startup">Startup</option>
-              <option value="Growing">Growing</option>
-              <option value="Large">Large</option>
-            </select>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Focus Area</label>
+            <div className="mt-2 space-y-2">
+              {FOCUS_OPTIONS.map((opt) => {
+                const isSelected = isCustom ? opt === OTHER_FOCUS_OPTION : concern === opt;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => handleFocusSelect(opt)}
+                    className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-semibold transition-all flex justify-between items-center ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-700 hover:border-slate-400'}`}
+                  >
+                    {opt}
+                    {isSelected && <Icon name="check" />}
+                  </button>
+                );
+              })}
+              {isCustom && (
+                <input
+                  type="text"
+                  value={customConcern}
+                  onChange={handleCustomChange}
+                  placeholder="Enter your custom focus area"
+                  className="w-full rounded-xl border-slate-200 py-3 px-4 text-sm focus:ring-slate-900 focus:border-slate-900"
+                  autoFocus
+                />
+              )}
+            </div>
           </div>
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Main Focus</label>
-            <input className="w-full rounded-xl border-slate-200 py-3 mt-1" value={mainConcern} onChange={(e) => setMainConcern(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Keywords</label>
-            <input className="w-full rounded-xl border-slate-200 py-3 mt-1" value={keywordsInput} onChange={(e) => setKeywordsInput(e.target.value)} placeholder="e.g. pricing, copilots, healthcare" />
-          </div>
+          <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
+            <input
+              type="checkbox"
+              checked={generateBriefs}
+              onChange={(e) => setGenerateBriefs(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+            />
+            Personalize and generate briefs now (costs 1 token)
+          </label>
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button
             onClick={() => onSave({
               role,
-              companySize,
-              decisionAreas: initial.decisionAreas || [],
-              mainConcern,
-              keywords,
-              hasPersonalized: Boolean(role || companySize || mainConcern || keywords.length)
+              companySize: '',
+              decisionAreas: inferDecisionAreasFromConcern(concern),
+              mainConcern: concern,
+              generateBriefs,
+              hasPersonalized: Boolean(role || concern)
             })}
-            disabled={saving}
+            disabled={saving || !role || !concern}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : (generateBriefs ? 'Personalize and Generate Briefs' : 'Save Personalization')}
           </Button>
         </div>
       </div>
@@ -1123,7 +1164,6 @@ const App = () => {
   const [personalizationOpen, setPersonalizationOpen] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
-  const [generationRequestId, setGenerationRequestId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusOutOfTokens, setStatusOutOfTokens] = useState(false);
   const [authGlobalError, setAuthGlobalError] = useState('');
@@ -1177,11 +1217,7 @@ const App = () => {
         throw new Error(data.error || 'Authentication failed');
       }
 
-      const rawExisting = localStorage.getItem(AUTH_USER_KEY);
-      const existingUser = rawExisting ? JSON.parse(rawExisting) : null;
-      const nextUser: User = existingUser?.email === data.user.email
-        ? { ...data.user, preferences: existingUser.preferences || data.user.preferences }
-        : data.user;
+      const nextUser: User = data.user;
       persistUser(nextUser, data.token);
       setUser(nextUser);
       setTokenBalance(Number(data.tokenBalance || 0));
@@ -1191,15 +1227,15 @@ const App = () => {
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleAuth = async (intent: 'signin' | 'signup') => {
     setAuthLoading(true);
     setAuthGlobalError('');
     try {
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = `${window.location.origin}/auth/callback?intent=${intent}`;
       const response = await fetch('/api/auth/google/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ redirectTo })
+        body: JSON.stringify({ redirectTo, intent })
       });
       const data = await parseApiResponse(response);
       if (!response.ok || !data.success || !data.url) {
@@ -1263,45 +1299,9 @@ const App = () => {
     }
   };
 
-  const triggerGeneration = async (requestId?: string) => {
-    if (tokenBalance <= 0) {
-      setStatusOutOfTokens(true);
-      setStatusMessage("You're out of tokens. Buy tokens to generate new briefs.");
-      return;
-    }
-
-    const reqId = requestId || generationRequestId || crypto.randomUUID();
-    setGenerationRequestId(reqId);
+  const handlePersonalizationComplete = async (prefs: UserPreferences) => {
     setLoading(true);
     setStatusMessage('');
-    setStatusOutOfTokens(false);
-    try {
-      const response = await fetch('/api/dashboard?action=generate', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ generationRequestId: reqId })
-      });
-      const data = await parseApiResponse(response);
-      if (!response.ok || !data.success) {
-        if (response.status === 402) {
-          setStatusOutOfTokens(true);
-          throw new Error('No tokens left. Please top up.');
-        }
-        throw new Error(data.error || 'Generation failed');
-      }
-      setBriefs(data.briefs || []);
-      setTokenBalance(Number(data.balance || tokenBalance));
-      setStatusMessage('Briefs generated successfully.');
-      setStatusOutOfTokens(false);
-      setGenerationRequestId(null);
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : 'Generation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePersonalizationComplete = async (prefs: UserPreferences) => {
     try {
       const response = await fetch('/api/dashboard?action=personalization', {
         method: 'POST',
@@ -1327,10 +1327,12 @@ const App = () => {
       setView('dashboard');
       setPersonalizationOpen(false);
       if (!data.requiresTopUp) {
-        setStatusMessage(data.generated ? 'Personalization saved and briefs regenerated.' : 'Personalization saved.');
+        setStatusMessage(data.generated ? 'Personalization saved and briefs generated.' : 'Personalization saved.');
       }
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : 'Failed to save personalization');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1374,7 +1376,6 @@ const App = () => {
     let active = true;
     const bootstrapSession = async () => {
       let token = localStorage.getItem(AUTH_TOKEN_KEY);
-      const rawUser = localStorage.getItem(AUTH_USER_KEY);
 
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const queryParams = new URLSearchParams(window.location.search);
@@ -1393,7 +1394,7 @@ const App = () => {
           const exchangeResponse = await fetch('/api/auth/exchange', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: queryParams.get('code') })
+            body: JSON.stringify({ code: queryParams.get('code'), intent: queryParams.get('intent') || '' })
           });
           const exchangeData = await parseApiResponse(exchangeResponse);
           if (exchangeResponse.ok && exchangeData.success && exchangeData.token) {
@@ -1424,8 +1425,7 @@ const App = () => {
           throw new Error(data.error || 'Invalid session');
         }
 
-        const persistedUser = rawUser ? JSON.parse(rawUser) : null;
-        const sessionUser: User = persistedUser?.email === data.user.email ? persistedUser : data.user;
+        const sessionUser: User = data.user;
         if (!active) return;
         setUser(sessionUser);
         setTokenBalance(Number(data.tokenBalance || 0));
@@ -1526,7 +1526,6 @@ const App = () => {
           loading={loading}
           tokenBalance={tokenBalance}
           onOpenBrief={navigateToBrief}
-          onGenerate={() => triggerGeneration()}
           onOpenPersonalization={() => setPersonalizationOpen(true)}
           onOpenBilling={() => setBillingOpen(true)}
         />

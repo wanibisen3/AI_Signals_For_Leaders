@@ -520,6 +520,17 @@ async function tryRecreateDeletedAccount(email: string, password: string) {
   };
 }
 
+async function reactivateSoftDeletedUser(userId: string, email: string) {
+  if (!supabaseAdmin) return;
+  const { error } = await supabaseAdmin
+    .from('app_users')
+    .upsert(
+      { user_id: userId, email: email || '', deleted_at: null, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  if (error && !isMissingTableError(error, 'app_users')) throw error;
+}
+
 async function savePersonalization(userId: string, preferences: any) {
   if (!supabaseAdmin) throw new Error('Supabase admin unavailable');
   const record = toPersonalizationRecord(preferences);
@@ -1044,9 +1055,22 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
     }
 
     const body = await readBody(req);
+    const intent = String(body?.intent || '').trim().toLowerCase();
     const origin = getRequestOrigin(req);
     const fallbackRedirect = origin ? `${origin}/auth/callback` : undefined;
-    const redirectTo = String(body?.redirectTo || fallbackRedirect || '').trim();
+    const redirectToInput = String(body?.redirectTo || fallbackRedirect || '').trim();
+    let redirectTo = redirectToInput;
+    if (redirectTo) {
+      try {
+        const u = new URL(redirectTo);
+        if (intent === 'signup' || intent === 'signin') {
+          u.searchParams.set('intent', intent);
+        }
+        redirectTo = u.toString();
+      } catch {
+        // keep original redirectTo
+      }
+    }
     if (!redirectTo) {
       return res.status(400).json({ success: false, error: 'Missing redirect URL' });
     }
@@ -1080,6 +1104,7 @@ export async function handleAuthExchange(req: AnyReq, res: AnyRes) {
 
     const body = await readBody(req);
     const code = String(body?.code || '').trim();
+    const intent = String(body?.intent || '').trim().toLowerCase();
     if (!code) return res.status(400).json({ success: false, error: 'Missing auth code' });
 
     const exchangeResult = await supabaseAuth.auth.exchangeCodeForSession(code);
@@ -1091,6 +1116,9 @@ export async function handleAuthExchange(req: AnyReq, res: AnyRes) {
     }
 
     await ensureUserInitialized(exchangeResult.data.user.id, exchangeResult.data.user.email || '');
+    if (intent === 'signup') {
+      await reactivateSoftDeletedUser(exchangeResult.data.user.id, exchangeResult.data.user.email || '');
+    }
     await assertActiveUser(exchangeResult.data.user.id);
     const state = await loadUserStateSafe(exchangeResult.data.user.id);
 
@@ -1198,6 +1226,7 @@ export async function handleSavePersonalization(req: AnyReq, res: AnyRes) {
 
     const body = await readBody(req);
     const existing = await getPersonalization(auth.user.id);
+    const shouldGenerate = body?.generateBriefs !== false;
 
     const nextPreferences = {
       role: String(body?.role || ''),
@@ -1211,10 +1240,10 @@ export async function handleSavePersonalization(req: AnyReq, res: AnyRes) {
     const savedRecord = await savePersonalization(auth.user.id, nextPreferences);
     const changed = personalizationChanged(existing, savedRecord);
 
-    if (!changed) {
+    if (!shouldGenerate) {
       return res.json({
         success: true,
-        changed: false,
+        changed,
         generated: false,
         personalization: toPreferences(savedRecord),
         tokenBalance: await getTokenBalance(auth.user.id)
