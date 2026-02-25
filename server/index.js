@@ -116,6 +116,44 @@ function preferencesKey(preferences = {}, timeHorizon = '30d', tierFilter = 'ALL
     });
 }
 
+function pickPrioritizedClusters(ranked, requestedLimit, hasPersonalization) {
+    if (!hasPersonalization) return ranked.slice(0, requestedLimit);
+
+    const focusThreshold = 0.45;
+    const focusFirst = ranked.filter((cluster) => (cluster?.ranking?.focusMatch || 0) >= focusThreshold);
+    const nonFocus = ranked.filter((cluster) => (cluster?.ranking?.focusMatch || 0) < focusThreshold);
+
+    const focusQuota = Math.ceil(requestedLimit * 0.75);
+    const trendingQuota = Math.max(1, Math.min(requestedLimit - focusQuota, Math.ceil(requestedLimit * 0.25)));
+    const focusSelected = focusFirst.slice(0, focusQuota);
+    const selectedIds = new Set(focusSelected.map((cluster) => cluster.cluster_id));
+
+    const trendingSelected = nonFocus
+        .slice()
+        .sort((a, b) => {
+            const bFresh = b?.ranking?.freshness || 0;
+            const aFresh = a?.ranking?.freshness || 0;
+            if (bFresh !== aFresh) return bFresh - aFresh;
+
+            const bCorroboration = Number(b?.supporting_source_count || 0);
+            const aCorroboration = Number(a?.supporting_source_count || 0);
+            if (bCorroboration !== aCorroboration) return bCorroboration - aCorroboration;
+
+            const bUrgency = Number(b?.ranking?.urgency || 0);
+            const aUrgency = Number(a?.ranking?.urgency || 0);
+            if (bUrgency !== aUrgency) return bUrgency - aUrgency;
+
+            return (b?.ranking?.score || 0) - (a?.ranking?.score || 0);
+        })
+        .filter((cluster) => !selectedIds.has(cluster.cluster_id))
+        .slice(0, trendingQuota);
+
+    for (const cluster of trendingSelected) selectedIds.add(cluster.cluster_id);
+    const remainder = ranked.filter((cluster) => !selectedIds.has(cluster.cluster_id));
+
+    return [...focusSelected, ...trendingSelected, ...remainder].slice(0, requestedLimit);
+}
+
 async function runPipeline({
     preferences = {},
     timeHorizon = '30d',
@@ -133,14 +171,7 @@ async function runPipeline({
         (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length)
     );
     const requestedLimit = Number(limit);
-    const focusQuota = hasPersonalization ? Math.ceil(requestedLimit * 0.9) : 0;
-    const focusFirst = ranked.filter((cluster) => (cluster?.ranking?.focusMatch || 0) >= 0.45);
-    const others = ranked.filter((cluster) => (cluster?.ranking?.focusMatch || 0) < 0.45);
-    const prioritized = hasPersonalization
-        ? [...focusFirst.slice(0, focusQuota), ...others, ...focusFirst.slice(focusQuota)]
-        : ranked;
-
-    const topClusters = prioritized.slice(0, requestedLimit);
+    const topClusters = pickPrioritizedClusters(ranked, requestedLimit, hasPersonalization);
     const briefs = (await Promise.all(topClusters.map((cluster) => generateBrief(cluster, preferences))))
         .filter(Boolean);
 

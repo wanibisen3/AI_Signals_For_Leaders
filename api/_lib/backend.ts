@@ -636,6 +636,45 @@ function preferencesKey(preferences: any = {}, timeHorizon = '30d', tierFilter =
   });
 }
 
+function pickPrioritizedClusters(ranked: any[], requestedLimit: number, hasPersonalization: boolean) {
+  if (!hasPersonalization) return ranked.slice(0, requestedLimit);
+
+  const focusThreshold = 0.45;
+  const focusFirst = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) >= focusThreshold);
+  const nonFocus = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) < focusThreshold);
+
+  const focusQuota = Math.ceil(requestedLimit * 0.75);
+  const trendingQuota = Math.max(1, Math.min(requestedLimit - focusQuota, Math.ceil(requestedLimit * 0.25)));
+  const focusSelected = focusFirst.slice(0, focusQuota);
+  const selectedIds = new Set(focusSelected.map((cluster: any) => cluster.cluster_id));
+
+  // Ensure latest high-signal AI stories are still represented in each batch.
+  const trendingSelected = nonFocus
+    .slice()
+    .sort((a: any, b: any) => {
+      const bFresh = b?.ranking?.freshness || 0;
+      const aFresh = a?.ranking?.freshness || 0;
+      if (bFresh !== aFresh) return bFresh - aFresh;
+
+      const bCorroboration = Number(b?.supporting_source_count || 0);
+      const aCorroboration = Number(a?.supporting_source_count || 0);
+      if (bCorroboration !== aCorroboration) return bCorroboration - aCorroboration;
+
+      const bUrgency = Number(b?.ranking?.urgency || 0);
+      const aUrgency = Number(a?.ranking?.urgency || 0);
+      if (bUrgency !== aUrgency) return bUrgency - aUrgency;
+
+      return (b?.ranking?.score || 0) - (a?.ranking?.score || 0);
+    })
+    .filter((cluster: any) => !selectedIds.has(cluster.cluster_id))
+    .slice(0, trendingQuota);
+
+  for (const cluster of trendingSelected) selectedIds.add(cluster.cluster_id);
+  const remainder = ranked.filter((cluster: any) => !selectedIds.has(cluster.cluster_id));
+
+  return [...focusSelected, ...trendingSelected, ...remainder].slice(0, requestedLimit);
+}
+
 async function buildBriefPayload({ preferences = {}, timeHorizon = '30d', tierFilter = 'ALL', limit = 18 }) {
   const rawItems = await fetchNews(tierFilter);
   const normalized = normalizeItems(rawItems);
@@ -650,14 +689,7 @@ async function buildBriefPayload({ preferences = {}, timeHorizon = '30d', tierFi
     (Array.isArray(preferences?.keywords) && preferences.keywords.length)
   );
   const requestedLimit = Number(limit);
-  const focusQuota = hasPersonalization ? Math.ceil(requestedLimit * 0.9) : 0;
-  const focusFirst = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) >= 0.45);
-  const others = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) < 0.45);
-  const prioritized = hasPersonalization
-    ? [...focusFirst.slice(0, focusQuota), ...others, ...focusFirst.slice(focusQuota)]
-    : ranked;
-
-  const topClusters = prioritized.slice(0, requestedLimit);
+  const topClusters = pickPrioritizedClusters(ranked, requestedLimit, hasPersonalization);
   const briefs = (await Promise.all(topClusters.map((cluster: any) => generateBrief(cluster, preferences)))).filter(Boolean);
 
   pipelineState.lastRunAt = new Date().toISOString();
