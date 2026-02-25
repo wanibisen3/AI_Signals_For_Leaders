@@ -1109,20 +1109,17 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
 
     const body = await readBody(req);
     const intent = String(body?.intent || '').trim().toLowerCase();
-    const configuredOrigin = getRequestOrigin(req);
-    const requestOrigin = getForwardedRequestOrigin(req);
-    const isProdRequest = Boolean(requestOrigin) && !requestOrigin.includes('localhost');
-    const trustedOrigin = isProdRequest ? requestOrigin : configuredOrigin;
-    const fallbackRedirect = trustedOrigin ? `${trustedOrigin}/auth/callback` : undefined;
-    const redirectToInput = String(body?.redirectTo || fallbackRedirect || '').trim();
-    let redirectTo = redirectToInput;
-    if (redirectTo && isLocalhostUrl(redirectTo) && trustedOrigin && !trustedOrigin.includes('localhost')) {
-      redirectTo = `${trustedOrigin}/auth/callback`;
+
+    // Build redirect from request origin only. Never trust client-provided host
+    // values for OAuth callbacks.
+    const requestOrigin = getForwardedRequestOrigin(req) || getRequestOrigin(req);
+    const normalizedOrigin = String(requestOrigin || '').replace(/\/+$/, '');
+    const isProdRequest = Boolean(normalizedOrigin) && !normalizedOrigin.includes('localhost');
+    if (!normalizedOrigin) {
+      return res.status(400).json({ success: false, error: 'Unable to determine request origin for OAuth redirect' });
     }
-    // On production requests, always force callback to the production host.
-    if (isProdRequest && trustedOrigin) {
-      redirectTo = `${trustedOrigin}/auth/callback`;
-    }
+
+    let redirectTo = `${normalizedOrigin}/auth/callback`;
     if (isProdRequest && isLocalhostUrl(redirectTo)) {
       return res.status(500).json({
         success: false,
