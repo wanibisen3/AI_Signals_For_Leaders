@@ -740,33 +740,37 @@ const DashboardView = ({
       </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-[1.1fr_1fr]">
-        <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1.5">Personalization</p>
+        <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm h-full">
+          <div className="flex h-full flex-col">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1.5">Personalization</p>
+            <div className="flex flex-1 items-end justify-between gap-4">
+              <div>
               <p className="text-sm font-semibold text-slate-700">Role: {user.preferences.role || 'Not set'}</p>
               <p className="text-sm font-semibold text-slate-700">Focus area: {user.preferences.mainConcern || 'Not set'}</p>
+              </div>
+              <Button
+                variant="primary"
+                className="rounded-full px-6 py-2.5 font-bold"
+                onClick={onOpenPersonalization}
+              >
+                Personalize and Refresh Signals
+              </Button>
             </div>
-            <Button
-              variant="secondary"
-              className="rounded-full border-slate-300 bg-gradient-to-r from-white to-slate-50 px-6 py-2.5 font-bold shadow-[0_8px_18px_-14px_rgba(15,23,42,0.6)] hover:shadow-[0_10px_22px_-14px_rgba(15,23,42,0.7)]"
-              onClick={onOpenPersonalization}
-            >
-              Personalize and Refresh Signals
-            </Button>
           </div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Token Balance</p>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-3xl leading-none font-black text-slate-900">{tokenBalance}</p>
-            <Button
-              variant="secondary"
-              className="rounded-full border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-2.5 font-bold text-emerald-800 shadow-[0_8px_18px_-14px_rgba(5,150,105,0.65)] hover:shadow-[0_10px_24px_-14px_rgba(5,150,105,0.75)]"
-              onClick={onOpenBilling}
-            >
-              Buy Tokens
-            </Button>
+        <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm h-full">
+          <div className="flex h-full flex-col">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Token Balance</p>
+            <div className="flex flex-1 items-end justify-between gap-3">
+              <p className="text-3xl leading-none font-black text-slate-900">{tokenBalance}</p>
+              <Button
+                variant="primary"
+                className="rounded-full px-6 py-2.5 font-bold"
+                onClick={onOpenBilling}
+              >
+                Buy Tokens
+              </Button>
+            </div>
           </div>
         </div>
       </div>
