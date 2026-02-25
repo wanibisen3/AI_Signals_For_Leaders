@@ -514,6 +514,17 @@ async function getLatestCompletedBatch(userId: string) {
   return { batch, briefs };
 }
 
+async function getLatestCompletedBatchSafe(userId: string) {
+  try {
+    return await getLatestCompletedBatch(userId);
+  } catch (error: any) {
+    if (isMissingTableError(error, 'brief_batches') || isMissingTableError(error, 'brief_items')) {
+      return { batch: null, briefs: [] };
+    }
+    throw error;
+  }
+}
+
 async function runGenerationForUser({
   userId,
   preferences,
@@ -904,16 +915,15 @@ export async function handleDashboardState(req: AnyReq, res: AnyRes) {
     await ensureUserInitialized(auth.user.id, auth.user.email || '');
     await assertActiveUser(auth.user.id);
 
-    const [tokenBalance, personalization, latest] = await Promise.all([
-      getTokenBalance(auth.user.id),
-      getPersonalization(auth.user.id),
-      getLatestCompletedBatch(auth.user.id)
+    const [state, latest] = await Promise.all([
+      loadUserStateSafe(auth.user.id),
+      getLatestCompletedBatchSafe(auth.user.id)
     ]);
 
     return res.json({
       success: true,
-      tokenBalance,
-      personalization,
+      tokenBalance: state.tokenBalance,
+      personalization: state.personalization,
       latestBatch: latest.batch,
       briefs: latest.briefs,
       hasBatch: Boolean(latest.batch)
