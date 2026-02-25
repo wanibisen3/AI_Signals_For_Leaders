@@ -1248,7 +1248,7 @@ const App = () => {
     setAuthGlobalError('');
     try {
       localStorage.setItem(OAUTH_INTENT_KEY, intent);
-      const redirectTo = `${window.location.origin}/auth/callback?intent=${intent}`;
+      const redirectTo = `${window.location.origin}/?intent=${intent}`;
       const response = await fetch('/api/auth/google/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

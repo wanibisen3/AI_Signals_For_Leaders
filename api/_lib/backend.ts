@@ -1119,7 +1119,7 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
       return res.status(400).json({ success: false, error: 'Unable to determine request origin for OAuth redirect' });
     }
 
-    let redirectTo = `${normalizedOrigin}/auth/callback`;
+    let redirectTo = `${normalizedOrigin}/`;
     if (isProdRequest && isLocalhostUrl(redirectTo)) {
       return res.status(500).json({
         success: false,
