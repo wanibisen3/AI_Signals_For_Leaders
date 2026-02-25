@@ -753,7 +753,7 @@ const DashboardView = ({
                 className="rounded-full px-6 py-2.5 font-bold"
                 onClick={onOpenPersonalization}
               >
-                Personalize and Refresh Signals
+                Refresh Signals
               </Button>
             </div>
           </div>
@@ -785,7 +785,7 @@ const DashboardView = ({
           <h3 className="text-2xl font-black text-slate-900 mb-2">No briefs yet</h3>
           <p className="text-slate-500 mb-6">Set personalization and generate your first brief batch. It costs 1 token.</p>
           <div className="flex justify-center gap-3">
-            <Button onClick={onOpenPersonalization}>Personalize and Refresh Signals</Button>
+            <Button onClick={onOpenPersonalization}>Refresh Signals</Button>
             <Button variant="secondary" onClick={onOpenBilling}>Buy Tokens</Button>
           </div>
         </div>
@@ -1017,14 +1017,12 @@ const PersonalizationModal = ({
   initial,
   open,
   onClose,
-  onSave,
-  saving
+  onSave
 }: {
   initial: UserPreferences;
   open: boolean;
   onClose: () => void;
   onSave: (prefs: UserPreferences) => Promise<void>;
-  saving: boolean;
 }) => {
   const [role, setRole] = useState<Role | ''>(initial.role || '');
   const [concern, setConcern] = useState(initial.mainConcern || '');
@@ -1125,9 +1123,9 @@ const PersonalizationModal = ({
               generateBriefs,
               hasPersonalized: Boolean(role || concern)
             })}
-            disabled={saving || !role || !concern}
+            disabled={!role || !concern}
           >
-            {saving ? 'Saving...' : (generateBriefs ? 'Personalize and Refresh Signals' : 'Save Personalization')}
+            {generateBriefs ? 'Save and Refresh Signals' : 'Save Personalization'}
           </Button>
         </div>
       </div>
@@ -1319,8 +1317,11 @@ const App = () => {
   };
 
   const handlePersonalizationComplete = async (prefs: UserPreferences) => {
+    setPersonalizationOpen(false);
+    setView('dashboard');
     setLoading(true);
     setStatusMessage('');
+    setStatusOutOfTokens(false);
     try {
       const response = await fetch('/api/dashboard?action=personalization', {
         method: 'POST',
@@ -1343,8 +1344,6 @@ const App = () => {
       } else {
         setStatusOutOfTokens(false);
       }
-      setView('dashboard');
-      setPersonalizationOpen(false);
       if (!data.requiresTopUp) {
         setStatusMessage(data.generated ? 'Personalization saved and briefs generated.' : 'Personalization saved.');
       }
@@ -1573,7 +1572,6 @@ const App = () => {
         initial={user.preferences}
         onClose={() => setPersonalizationOpen(false)}
         onSave={handlePersonalizationComplete}
-        saving={loading}
       />
       <BuyTokensModal
         open={billingOpen}
