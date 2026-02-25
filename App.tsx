@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { User, UserPreferences, ViewState, Brief, Role, CompanySize, DecisionArea, TokenTier, DashboardState } from './types';
+import { User, UserPreferences, ViewState, Brief, Role, CompanySize, DecisionArea, DashboardState } from './types';
 
 // --- Shared Components ---
 
@@ -1074,16 +1074,10 @@ const PersonalizationModal = ({
 
 const BuyTokensModal = ({
   open,
-  tiers,
-  onClose,
-  onCheckout,
-  loadingCode
+  onClose
 }: {
   open: boolean;
-  tiers: TokenTier[];
   onClose: () => void;
-  onCheckout: (code: string) => Promise<void>;
-  loadingCode: string;
 }) => {
   if (!open) return null;
   return (
@@ -1093,17 +1087,14 @@ const BuyTokensModal = ({
           <h3 className="text-2xl font-black text-slate-900">Buy Tokens</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-900"><Icon name="close" /></button>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
-          {tiers.map((tier) => (
-            <div key={tier.packageCode} className={`rounded-2xl border p-5 ${tier.mostPopular ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}`}>
-              {tier.mostPopular && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 mb-2">Most Popular</p>}
-              <p className="text-3xl font-black text-slate-900 mb-1">{tier.label}</p>
-              <p className="text-slate-500 mb-4">{tier.tokens} tokens</p>
-              <Button onClick={() => onCheckout(tier.packageCode)} disabled={loadingCode === tier.packageCode} className="w-full">
-                {loadingCode === tier.packageCode ? 'Redirecting...' : 'Checkout'}
-              </Button>
-            </div>
-          ))}
+        <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-10 text-center text-white relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-200 mb-4">Token Store</p>
+          <h4 className="text-4xl font-black tracking-tight mb-3">Coming Soon</h4>
+          <p className="text-slate-200 font-medium max-w-md mx-auto leading-relaxed">
+            We are crafting a premium token purchase experience. Stay tuned.
+          </p>
         </div>
       </div>
     </div>
@@ -1125,8 +1116,6 @@ const App = () => {
   const [tokenBalance, setTokenBalance] = useState(0);
   const [personalizationOpen, setPersonalizationOpen] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
-  const [tiers, setTiers] = useState<TokenTier[]>([]);
-  const [checkoutLoadingCode, setCheckoutLoadingCode] = useState('');
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [generationRequestId, setGenerationRequestId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
@@ -1336,30 +1325,6 @@ const App = () => {
     }
   };
 
-  const loadCatalog = async () => {
-    const response = await fetch('/api/tokens');
-    const data = await parseApiResponse(response);
-    if (response.ok && data.success) {
-      setTiers(data.tiers || []);
-    }
-  };
-
-  const startCheckout = async (packageCode: string) => {
-    setCheckoutLoadingCode(packageCode);
-    try {
-      const response = await fetch('/api/tokens?action=checkout', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ packageCode })
-      });
-      const data = await parseApiResponse(response);
-      if (!response.ok || !data.success || !data.url) throw new Error(data.error || 'Failed to create checkout session');
-      window.location.assign(data.url);
-    } finally {
-      setCheckoutLoadingCode('');
-    }
-  };
-
   const navigateToBrief = (brief: Brief) => {
     setSelectedBrief(brief);
     setView('detail');
@@ -1472,10 +1437,6 @@ const App = () => {
   }, [view, user?.email]);
 
   useEffect(() => {
-    loadCatalog().catch(() => {});
-  }, []);
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('checkout') === 'success') {
       setStatusMessage('Payment successful. Your token balance has been updated.');
@@ -1565,10 +1526,7 @@ const App = () => {
       />
       <BuyTokensModal
         open={billingOpen}
-        tiers={tiers}
         onClose={() => setBillingOpen(false)}
-        onCheckout={startCheckout}
-        loadingCode={checkoutLoadingCode}
       />
     </>
   );
