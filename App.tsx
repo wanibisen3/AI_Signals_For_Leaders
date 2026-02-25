@@ -1418,6 +1418,7 @@ const App = () => {
         setView(sessionUser.preferences?.hasPersonalized ? 'dashboard' : 'personalization');
       } catch {
         clearPersistedSession();
+        if (active) setView('signin');
       } finally {
         if (active) setAuthBootstrapped(true);
       }

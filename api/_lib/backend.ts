@@ -83,6 +83,10 @@ function isMissingFunctionError(error: any, functionName: string) {
   );
 }
 
+function isAccountDeactivatedError(error: any) {
+  return String(error?.message || '').toLowerCase().includes('account has been deactivated');
+}
+
 function isValidHttpUrl(value = '') {
   try {
     const parsed = new URL(value);
@@ -826,6 +830,13 @@ export async function handleAuthSignin(req: AnyReq, res: AnyRes) {
       tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
+    if (isAccountDeactivatedError(error)) {
+      return res.status(401).json({
+        success: false,
+        error: 'No user exists for this account. Please create a new account.',
+        code: 'account_deleted'
+      });
+    }
     return res.status(500).json({ success: false, error: error?.message || 'Signin failed' });
   }
 }
@@ -847,6 +858,13 @@ export async function handleAuthSession(req: AnyReq, res: AnyRes) {
       tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
+    if (isAccountDeactivatedError(error)) {
+      return res.status(401).json({
+        success: false,
+        error: 'No user exists for this account. Please create a new account.',
+        code: 'account_deleted'
+      });
+    }
     return res.status(500).json({ success: false, error: error?.message || 'Session check failed' });
   }
 }
@@ -938,6 +956,13 @@ export async function handleAuthExchange(req: AnyReq, res: AnyRes) {
       tokenBalance: state.tokenBalance
     });
   } catch (error: any) {
+    if (isAccountDeactivatedError(error)) {
+      return res.status(401).json({
+        success: false,
+        error: 'No user exists for this account. Please create a new account.',
+        code: 'account_deleted'
+      });
+    }
     return res.status(500).json({ success: false, error: error?.message || 'Auth exchange failed' });
   }
 }
