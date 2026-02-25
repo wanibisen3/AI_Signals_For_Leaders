@@ -421,6 +421,23 @@ async function findAuthUserIdByEmail(email: string) {
   return null;
 }
 
+async function getDeletedAppUserIdByEmail(email: string) {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin
+    .from('app_users')
+    .select('user_id, deleted_at')
+    .ilike('email', email)
+    .not('deleted_at', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+  if (error) {
+    if (isMissingTableError(error, 'app_users')) return null;
+    throw error;
+  }
+  const row = Array.isArray(data) ? data[0] : null;
+  return row?.user_id ? String(row.user_id) : null;
+}
+
 async function tryReactivateDeletedAccount(email: string, password: string) {
   if (!supabaseAdmin || !supabaseAuth || !(supabaseAdmin as any).auth?.admin?.updateUserById) return null;
 
@@ -467,6 +484,38 @@ async function tryReactivateDeletedAccount(email: string, password: string) {
   return {
     token: signInResult.data.session.access_token,
     user: mapAuthUser(signInResult.data.user, state.personalization),
+    tokenBalance: state.tokenBalance
+  };
+}
+
+async function tryRecreateDeletedAccount(email: string, password: string) {
+  if (!supabaseAdmin || !(supabaseAdmin as any).auth?.admin?.deleteUser) return null;
+
+  let userId = await getDeletedAppUserIdByEmail(email);
+  if (!userId) return null;
+
+  const deleteResult = await (supabaseAdmin as any).auth.admin.deleteUser(userId);
+  if (deleteResult.error) return null;
+
+  const retrySignUp = await supabaseAuth?.auth.signUp({ email, password });
+  if (!retrySignUp || retrySignUp.error || !retrySignUp.data.user?.id) return null;
+
+  let session = retrySignUp.data.session || null;
+  let authUser = retrySignUp.data.user;
+  if (!session) {
+    const signInResult = await supabaseAuth?.auth.signInWithPassword({ email, password });
+    if (!signInResult?.error && signInResult?.data.session && signInResult.data.user?.id) {
+      session = signInResult.data.session;
+      authUser = signInResult.data.user;
+    }
+  }
+  if (!session || !authUser?.id) return null;
+
+  await ensureUserInitialized(authUser.id, authUser.email || email);
+  const state = await loadUserStateSafe(authUser.id);
+  return {
+    token: session.access_token,
+    user: mapAuthUser(authUser, state.personalization),
     tokenBalance: state.tokenBalance
   };
 }
@@ -854,6 +903,13 @@ export async function handleAuthSignup(req: AnyReq, res: AnyRes) {
           return res.json({
             success: true,
             ...reactivated
+          });
+        }
+        const recreated = await tryRecreateDeletedAccount(email, password);
+        if (recreated) {
+          return res.json({
+            success: true,
+            ...recreated
           });
         }
       }
@@ -1390,6 +1446,10 @@ export async function handleDeleteAccount(req: AnyReq, res: AnyRes) {
       .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq('user_id', auth.user.id);
     if (error) throw error;
+
+    if ((supabaseAdmin as any).auth?.admin?.deleteUser) {
+      await (supabaseAdmin as any).auth.admin.deleteUser(auth.user.id);
+    }
 
     const token = getAuthToken(req);
     if (token && (supabaseAdmin as any).auth?.admin?.signOut) {
