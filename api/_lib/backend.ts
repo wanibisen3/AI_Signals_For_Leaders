@@ -55,7 +55,11 @@ function looksLikeConfigured(value = '') {
 
 function isMissingTableError(error: any, tableName: string) {
   const message = String(error?.message || '').toLowerCase();
-  return message.includes('relation') && message.includes(tableName.toLowerCase()) && message.includes('does not exist');
+  const normalizedTable = tableName.toLowerCase();
+  return (
+    (message.includes('relation') && message.includes(normalizedTable) && message.includes('does not exist')) ||
+    (message.includes('could not find the table') && message.includes(normalizedTable) && message.includes('schema cache'))
+  );
 }
 
 function isValidHttpUrl(value = '') {
@@ -319,8 +323,7 @@ async function assertActiveUser(userId: string) {
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {
-    const message = String((error as any)?.message || '').toLowerCase();
-    if (message.includes('relation') && message.includes('app_users') && message.includes('does not exist')) return;
+    if (isMissingTableError(error, 'app_users')) return;
     throw error;
   }
   if (data?.deleted_at) {
@@ -336,8 +339,7 @@ async function getTokenBalance(userId: string) {
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {
-    const message = String((error as any)?.message || '').toLowerCase();
-    if (message.includes('relation') && message.includes('user_token_balances') && message.includes('does not exist')) {
+    if (isMissingTableError(error, 'user_token_balances')) {
       return 0;
     }
     throw error;
@@ -353,8 +355,7 @@ async function getPersonalization(userId: string) {
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {
-    const message = String((error as any)?.message || '').toLowerCase();
-    if (message.includes('relation') && message.includes('user_personalizations') && message.includes('does not exist')) {
+    if (isMissingTableError(error, 'user_personalizations')) {
       return defaultPreferences();
     }
     throw error;
