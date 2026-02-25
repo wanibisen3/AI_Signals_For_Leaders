@@ -47,17 +47,6 @@ Serve the React app and API from one local URL (`http://localhost:3001`):
 
 Then open `http://localhost:3001`.
 
-## Secure OpenAI Usage
-
-The OpenAI API key is server-side only.
-
-- Do not read `OPENAI_API_KEY` in frontend code.
-- Use `POST /api/openai` from the browser.
-- The Vercel serverless function in `api/openai.ts` reads `process.env.OPENAI_API_KEY` securely on the server.
-
-Frontend helper:
-- `services/openai.ts`
-
 ## Deploy on Vercel (Single Domain)
 
 1. Import this repo into Vercel.
@@ -70,6 +59,21 @@ Frontend helper:
    - `CACHE_TTL_MS` (optional)
    - `SEMANTIC_DEDUPE_THRESHOLD` (optional)
 3. Deploy.
+
+## Automatic DB Migrations (Recommended)
+
+Schema drift is what caused errors like missing `user_personalizations` columns/tables. This repo now includes:
+
+- Supabase migration file in `supabase/migrations/`
+- GitHub Action `.github/workflows/supabase-migrations.yml` that runs on every push to `main`
+
+Set these GitHub repository secrets once:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_REF`
+- `SUPABASE_DB_PASSWORD`
+
+After that, every merge to `main` automatically applies pending migrations to your linked Supabase project.
 
 ## Google Sign-In Setup (Supabase)
 

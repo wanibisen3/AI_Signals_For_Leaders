@@ -8,6 +8,7 @@
     "backend:dev": "npm --prefix server run dev",
     "build": "vite build",
     "test": "vitest run",
+    "db:migrate": "supabase db push --include-all",
     "preview": "vite preview",
     "serve:one": "npm run build && npm --prefix server start"
   },
