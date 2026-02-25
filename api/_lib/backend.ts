@@ -234,6 +234,15 @@ function getRequestOrigin(req: AnyReq) {
   return `${proto}://${host}`;
 }
 
+function getForwardedRequestOrigin(req: AnyReq) {
+  const forwardedProto = String(req.headers?.['x-forwarded-proto'] || '').split(',')[0].trim();
+  const forwardedHost = String(req.headers?.['x-forwarded-host'] || '').split(',')[0].trim();
+  const host = forwardedHost || String(req.headers?.host || '').trim();
+  if (!host) return '';
+  const proto = forwardedProto || (host.includes('localhost') ? 'http' : 'https');
+  return `${proto}://${host}`;
+}
+
 async function readBody(req: AnyReq) {
   if (req.body !== undefined) {
     if (typeof req.body !== 'string') return req.body || {};
@@ -1085,12 +1094,19 @@ export async function handleAuthGoogleStart(req: AnyReq, res: AnyRes) {
 
     const body = await readBody(req);
     const intent = String(body?.intent || '').trim().toLowerCase();
-    const origin = getRequestOrigin(req);
-    const fallbackRedirect = origin ? `${origin}/auth/callback` : undefined;
+    const configuredOrigin = getRequestOrigin(req);
+    const requestOrigin = getForwardedRequestOrigin(req);
+    const isProdRequest = Boolean(requestOrigin) && !requestOrigin.includes('localhost');
+    const trustedOrigin = isProdRequest ? requestOrigin : configuredOrigin;
+    const fallbackRedirect = trustedOrigin ? `${trustedOrigin}/auth/callback` : undefined;
     const redirectToInput = String(body?.redirectTo || fallbackRedirect || '').trim();
     let redirectTo = redirectToInput;
-    if (redirectTo && isLocalhostUrl(redirectTo) && origin && !origin.includes('localhost')) {
-      redirectTo = `${origin}/auth/callback`;
+    if (redirectTo && isLocalhostUrl(redirectTo) && trustedOrigin && !trustedOrigin.includes('localhost')) {
+      redirectTo = `${trustedOrigin}/auth/callback`;
+    }
+    // On production requests, always force callback to the production host.
+    if (isProdRequest && trustedOrigin) {
+      redirectTo = `${trustedOrigin}/auth/callback`;
     }
     if (redirectTo) {
       try {
