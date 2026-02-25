@@ -407,30 +407,52 @@ async function loadUserStateSafe(userId: string) {
   }
 }
 
+async function findAuthUserIdByEmail(email: string) {
+  if (!supabaseAdmin || !(supabaseAdmin as any).auth?.admin?.listUsers) return null;
+  const pageSize = 200;
+  for (let page = 1; page <= 5; page += 1) {
+    const result = await (supabaseAdmin as any).auth.admin.listUsers({ page, perPage: pageSize });
+    if (result.error) throw result.error;
+    const users = result.data?.users || [];
+    const match = users.find((u: any) => String(u?.email || '').toLowerCase() === email.toLowerCase());
+    if (match?.id) return String(match.id);
+    if (users.length < pageSize) break;
+  }
+  return null;
+}
+
 async function tryReactivateDeletedAccount(email: string, password: string) {
   if (!supabaseAdmin || !supabaseAuth || !(supabaseAdmin as any).auth?.admin?.updateUserById) return null;
 
-  const { data: appUser, error: appUserError } = await supabaseAdmin
+  const { data: appUsers, error: appUserError } = await supabaseAdmin
     .from('app_users')
     .select('user_id, deleted_at')
-    .eq('email', email)
-    .maybeSingle();
+    .ilike('email', email)
+    .order('updated_at', { ascending: false })
+    .limit(1);
 
   if (appUserError) {
     if (isMissingTableError(appUserError, 'app_users')) return null;
     throw appUserError;
   }
-  if (!appUser?.user_id || !appUser?.deleted_at) return null;
+  const appUser = Array.isArray(appUsers) ? appUsers[0] : null;
+  let userId = appUser?.user_id ? String(appUser.user_id) : null;
+  const isDeletedInAppTable = Boolean(appUser?.deleted_at);
 
-  const updateResult = await (supabaseAdmin as any).auth.admin.updateUserById(appUser.user_id, {
+  if (!userId) {
+    userId = await findAuthUserIdByEmail(email);
+  }
+  if (!userId) return null;
+  if (appUser && !isDeletedInAppTable) return null;
+
+  const updateResult = await (supabaseAdmin as any).auth.admin.updateUserById(userId, {
     password
   });
   if (updateResult.error) throw updateResult.error;
 
   const { error: reactivateError } = await supabaseAdmin
     .from('app_users')
-    .update({ deleted_at: null, updated_at: new Date().toISOString() })
-    .eq('user_id', appUser.user_id);
+    .upsert({ user_id: userId, email, deleted_at: null, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
   if (reactivateError && !isMissingTableError(reactivateError, 'app_users')) throw reactivateError;
 
   const signInResult = await supabaseAuth.auth.signInWithPassword({ email, password });
