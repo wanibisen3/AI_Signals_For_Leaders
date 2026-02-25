@@ -62,6 +62,14 @@ function isMissingTableError(error: any, tableName: string) {
   );
 }
 
+function isMissingFunctionError(error: any, functionName: string) {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('could not find the function') &&
+    message.includes(functionName.toLowerCase())
+  );
+}
+
 function isValidHttpUrl(value = '') {
   try {
     const parsed = new URL(value);
@@ -383,7 +391,12 @@ async function savePersonalization(userId: string, preferences: any) {
   const { error } = await supabaseAdmin
     .from('user_personalizations')
     .upsert({ user_id: userId, ...record, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-  if (error) throw error;
+  if (error) {
+    if (isMissingTableError(error, 'user_personalizations')) {
+      return record;
+    }
+    throw error;
+  }
   return record;
 }
 
@@ -961,6 +974,19 @@ export async function handleRunGeneration(req: AnyReq, res: AnyRes) {
 
     return res.json({ success: true, ...result });
   } catch (error: any) {
+    if (
+      isMissingTableError(error, 'user_personalizations') ||
+      isMissingTableError(error, 'user_token_balances') ||
+      isMissingTableError(error, 'brief_batches') ||
+      isMissingTableError(error, 'brief_items') ||
+      isMissingTableError(error, 'token_transactions') ||
+      isMissingFunctionError(error, 'claim_generation_token')
+    ) {
+      return res.status(503).json({
+        success: false,
+        error: 'Generation is unavailable until database migrations are applied'
+      });
+    }
     return res.status(500).json({ success: false, error: error?.message || 'Generation failed' });
   }
 }
@@ -1040,6 +1066,32 @@ export async function handleSavePersonalization(req: AnyReq, res: AnyRes) {
       latestBatch: generationResult.batch
     });
   } catch (error: any) {
+    if (
+      isMissingTableError(error, 'user_personalizations') ||
+      isMissingTableError(error, 'user_token_balances') ||
+      isMissingTableError(error, 'brief_batches') ||
+      isMissingTableError(error, 'brief_items') ||
+      isMissingTableError(error, 'token_transactions') ||
+      isMissingFunctionError(error, 'claim_generation_token')
+    ) {
+      const body = await readBody(req);
+      const fallbackPreferences = {
+        role: String(body?.role || ''),
+        companySize: String(body?.companySize || ''),
+        mainConcern: String(body?.mainConcern || ''),
+        keywords: parseKeywords(body?.keywords || []),
+        decisionAreas: Array.isArray(body?.decisionAreas) ? body.decisionAreas : [],
+        hasPersonalized: true
+      };
+      return res.json({
+        success: true,
+        changed: true,
+        generated: false,
+        migrationRequired: true,
+        personalization: fallbackPreferences,
+        tokenBalance: 0
+      });
+    }
     return res.status(500).json({ success: false, error: error?.message || 'Failed to save personalization' });
   }
 }
