@@ -1130,6 +1130,7 @@ const App = () => {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [generationRequestId, setGenerationRequestId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusOutOfTokens, setStatusOutOfTokens] = useState(false);
 
   const persistUser = (nextUser: User, token: string) => {
     localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -1265,10 +1266,17 @@ const App = () => {
   };
 
   const triggerGeneration = async (requestId?: string) => {
+    if (tokenBalance <= 0) {
+      setStatusOutOfTokens(true);
+      setStatusMessage("You're out of tokens. Buy tokens to generate new briefs.");
+      return;
+    }
+
     const reqId = requestId || generationRequestId || crypto.randomUUID();
     setGenerationRequestId(reqId);
     setLoading(true);
     setStatusMessage('');
+    setStatusOutOfTokens(false);
     try {
       const response = await fetch('/api/dashboard?action=generate', {
         method: 'POST',
@@ -1278,7 +1286,7 @@ const App = () => {
       const data = await parseApiResponse(response);
       if (!response.ok || !data.success) {
         if (response.status === 402) {
-          setBillingOpen(true);
+          setStatusOutOfTokens(true);
           throw new Error('No tokens left. Please top up.');
         }
         throw new Error(data.error || 'Generation failed');
@@ -1286,6 +1294,7 @@ const App = () => {
       setBriefs(data.briefs || []);
       setTokenBalance(Number(data.balance || tokenBalance));
       setStatusMessage('Briefs generated successfully.');
+      setStatusOutOfTokens(false);
       setGenerationRequestId(null);
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : 'Generation failed');
@@ -1311,10 +1320,17 @@ const App = () => {
       }
       if (data.briefs) setBriefs(data.briefs);
       setTokenBalance(Number(data.tokenBalance || tokenBalance));
-      if (data.requiresTopUp) setBillingOpen(true);
+      if (data.requiresTopUp) {
+        setStatusOutOfTokens(true);
+        setStatusMessage("You're out of tokens. Personalization was saved, but briefs were not generated.");
+      } else {
+        setStatusOutOfTokens(false);
+      }
       setView('dashboard');
       setPersonalizationOpen(false);
-      setStatusMessage(data.generated ? 'Personalization saved and briefs regenerated.' : 'Personalization saved.');
+      if (!data.requiresTopUp) {
+        setStatusMessage(data.generated ? 'Personalization saved and briefs regenerated.' : 'Personalization saved.');
+      }
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : 'Failed to save personalization');
     }
@@ -1463,6 +1479,7 @@ const App = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('checkout') === 'success') {
       setStatusMessage('Payment successful. Your token balance has been updated.');
+      setStatusOutOfTokens(false);
       setView('dashboard');
       loadDashboard().catch(() => {});
       window.history.replaceState({}, '', '/');
@@ -1502,7 +1519,14 @@ const App = () => {
         {statusMessage && (
           <div className="px-4 sm:px-6 lg:px-12 pt-4">
             <div className="max-w-5xl mx-auto rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">
-              {statusMessage}
+              <div className="flex items-center justify-between gap-3">
+                <span>{statusMessage}</span>
+                {statusOutOfTokens && (
+                  <Button variant="secondary" className="rounded-full px-4 py-2" onClick={() => setBillingOpen(true)}>
+                    Buy Tokens
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
