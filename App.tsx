@@ -1153,6 +1153,7 @@ const BuyTokensModal = ({
 const App = () => {
   const AUTH_TOKEN_KEY = 'ai_signals_auth_token';
   const AUTH_USER_KEY = 'ai_signals_auth_user';
+  const OAUTH_INTENT_KEY = 'ai_signals_oauth_intent';
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState<ViewState>('marketing');
   const [selectedBrief, setSelectedBrief] = useState<Brief | null>(null);
@@ -1176,6 +1177,7 @@ const App = () => {
   const clearPersistedSession = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(OAUTH_INTENT_KEY);
   };
 
   const parseApiResponse = async (response: Response) => {
@@ -1231,6 +1233,7 @@ const App = () => {
     setAuthLoading(true);
     setAuthGlobalError('');
     try {
+      localStorage.setItem(OAUTH_INTENT_KEY, intent);
       const redirectTo = `${window.location.origin}/auth/callback?intent=${intent}`;
       const response = await fetch('/api/auth/google/start', {
         method: 'POST',
@@ -1376,6 +1379,7 @@ const App = () => {
     let active = true;
     const bootstrapSession = async () => {
       let token = localStorage.getItem(AUTH_TOKEN_KEY);
+      const oauthIntent = localStorage.getItem(OAUTH_INTENT_KEY) || '';
 
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const queryParams = new URLSearchParams(window.location.search);
@@ -1415,7 +1419,10 @@ const App = () => {
 
       try {
         const response = await fetch('/api/auth/session', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-auth-intent': oauthIntent
+          }
         });
         const data = await parseApiResponse(response);
         if (!response.ok || !data.success) {
@@ -1430,6 +1437,7 @@ const App = () => {
         setUser(sessionUser);
         setTokenBalance(Number(data.tokenBalance || 0));
         setView(sessionUser.preferences?.hasPersonalized ? 'dashboard' : 'personalization');
+        localStorage.removeItem(OAUTH_INTENT_KEY);
       } catch {
         clearPersistedSession();
         if (active) setView('signin');

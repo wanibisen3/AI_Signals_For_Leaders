@@ -1004,9 +1004,18 @@ export async function handleAuthSession(req: AnyReq, res: AnyRes) {
   try {
     const auth = await requireAuth(req, res);
     if (!auth) return;
+    const intent = String(req.headers?.['x-auth-intent'] || '').trim().toLowerCase();
 
     await ensureUserInitialized(auth.user.id, auth.user.email || '');
-    await assertActiveUser(auth.user.id);
+    try {
+      await assertActiveUser(auth.user.id);
+    } catch (error: any) {
+      if (intent === 'signup' && isAccountDeactivatedError(error)) {
+        await reactivateSoftDeletedUser(auth.user.id, auth.user.email || '');
+      } else {
+        throw error;
+      }
+    }
     const state = await loadUserStateSafe(auth.user.id);
 
     return res.json({
