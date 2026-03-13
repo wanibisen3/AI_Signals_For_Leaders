@@ -718,6 +718,10 @@ const DashboardView = ({
   onOpenBilling: () => void;
 }) => {
   const sortedBriefs = [...briefs].sort((a, b) => {
+    const aRanking = a.rankingScore ?? Number.NEGATIVE_INFINITY;
+    const bRanking = b.rankingScore ?? Number.NEGATIVE_INFINITY;
+    if (bRanking !== aRanking) return bRanking - aRanking;
+
     const aFocus = a.matchBreakdown?.focus || 0;
     const bFocus = b.matchBreakdown?.focus || 0;
     if (bFocus !== aFocus) return bFocus - aFocus;

@@ -55,6 +55,7 @@ export interface Brief {
   source: string;
   date: string;
   category: string;
+  rankingScore?: number;
   matchScore?: number;
   matchBreakdown?: {
     role: number;

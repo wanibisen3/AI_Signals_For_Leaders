@@ -29,6 +29,7 @@ function fallbackBrief(cluster, index = 0) {
         approvedBy: null,
         eventType: cluster.event_type,
         supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
+        rankingScore: cluster.ranking?.score,
         matchScore: personalizationMatch !== undefined ? Math.round(personalizationMatch * 100) : 50,
         matchBreakdown: cluster.ranking ? {
             role: Math.round((cluster.ranking.roleMatch || 0) * 100),
@@ -93,6 +94,7 @@ Be concrete and conservative.`;
             approvedBy: null,
             eventType: cluster.event_type,
             supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
+            rankingScore: cluster.ranking?.score,
             matchScore: cluster.ranking?.personalizationMatch !== undefined
                 ? Math.round(cluster.ranking.personalizationMatch * 100)
                 : (cluster.ranking?.leaderFit ? Math.round((cluster.ranking.leaderFit / 3) * 100) : 50),
