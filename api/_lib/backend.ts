@@ -652,7 +652,7 @@ function pickPrioritizedClusters(ranked: any[], requestedLimit: number, preferen
   );
 
   const focusThreshold = hasExplicitFocus ? 0.55 : 0.45;
-  const focusFirst = ranked.filter((cluster: any) => {
+  const strictFocus = ranked.filter((cluster: any) => {
     const focusMatch = cluster?.ranking?.focusMatch || 0;
     const personalizationMatch = cluster?.ranking?.personalizationMatch || 0;
     const concernMatch = cluster?.ranking?.concernMatch || 0;
@@ -665,13 +665,24 @@ function pickPrioritizedClusters(ranked: any[], requestedLimit: number, preferen
       (personalizationMatch >= 0.55 || concernMatch >= 0.45 || areaMatch >= 0.45)
     );
   });
-  const nonFocus = ranked.filter((cluster: any) => !focusFirst.includes(cluster));
+  const relaxedFocus = hasExplicitFocus
+    ? ranked.filter((cluster: any) => {
+      if (strictFocus.includes(cluster)) return false;
+
+      const personalizationMatch = cluster?.ranking?.personalizationMatch || 0;
+      const concernMatch = cluster?.ranking?.concernMatch || 0;
+      const areaMatch = cluster?.ranking?.areaMatch || 0;
+
+      return personalizationMatch >= 0.35 || concernMatch >= 0.25 || areaMatch >= 0.25;
+    })
+    : [];
+  const nonFocus = ranked.filter((cluster: any) => !strictFocus.includes(cluster) && !relaxedFocus.includes(cluster));
 
   const focusQuota = Math.ceil(requestedLimit * 0.75);
   const trendingQuota = hasExplicitFocus
-    ? Math.max(1, Math.min(2, requestedLimit - focusQuota))
+    ? Math.max(0, Math.min(1, requestedLimit - focusQuota))
     : Math.max(1, Math.min(requestedLimit - focusQuota, Math.ceil(requestedLimit * 0.25)));
-  const focusSelected = focusFirst.slice(0, focusQuota);
+  const focusSelected = [...strictFocus, ...relaxedFocus].slice(0, focusQuota);
   const selectedIds = new Set(focusSelected.map((cluster: any) => cluster.cluster_id));
 
   // Ensure latest high-signal AI stories are still represented in each batch.
