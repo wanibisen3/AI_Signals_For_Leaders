@@ -90,4 +90,32 @@ describe('signal reranking', () => {
     expect(ranked[0].category).toBe('Risk');
     expect(ranked[0].ranking.personalizationMatch).toBeGreaterThan(ranked[1].ranking.personalizationMatch);
   });
+
+  it('does not treat generic product funding stories as strong matches for data leak concerns', () => {
+    const recent = new Date().toISOString();
+    const clusters = [
+      makeCluster({
+        title: 'Startup raises funding for AI-native cloud infrastructure',
+        text: 'A cloud platform raised a large Series B to expand AI infrastructure and challenge hyperscalers.',
+        category: 'Product',
+        publishedAt: recent
+      }),
+      makeCluster({
+        title: 'New framework addresses enterprise AI data leak prevention',
+        text: 'Security and compliance teams are adopting controls for AI data leaks, privacy, and governance.',
+        category: 'Risk',
+        publishedAt: recent
+      })
+    ];
+
+    const ranked = scoreAndRankClusters(clusters, {
+      role: 'Business Leader',
+      mainConcern: 'AI data leaks',
+      decisionAreas: ['Risk']
+    });
+
+    expect(ranked[0].category).toBe('Risk');
+    expect(ranked[0].ranking.concernMatch).toBeGreaterThan(ranked[1].ranking.concernMatch);
+    expect(ranked[1].ranking.focusMatch).toBeLessThan(0.55);
+  });
 });

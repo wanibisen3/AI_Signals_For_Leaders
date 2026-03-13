@@ -636,15 +636,41 @@ function preferencesKey(preferences: any = {}, timeHorizon = '30d', tierFilter =
   });
 }
 
-function pickPrioritizedClusters(ranked: any[], requestedLimit: number, hasPersonalization: boolean) {
+function pickPrioritizedClusters(ranked: any[], requestedLimit: number, preferences: any = {}) {
+  const hasPersonalization = Boolean(
+    preferences?.role ||
+    preferences?.mainConcern ||
+    (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length) ||
+    (Array.isArray(preferences?.keywords) && preferences.keywords.length)
+  );
   if (!hasPersonalization) return ranked.slice(0, requestedLimit);
 
-  const focusThreshold = 0.45;
-  const focusFirst = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) >= focusThreshold);
-  const nonFocus = ranked.filter((cluster: any) => (cluster?.ranking?.focusMatch || 0) < focusThreshold);
+  const hasExplicitFocus = Boolean(
+    preferences?.mainConcern ||
+    (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length) ||
+    (Array.isArray(preferences?.keywords) && preferences.keywords.length)
+  );
+
+  const focusThreshold = hasExplicitFocus ? 0.55 : 0.45;
+  const focusFirst = ranked.filter((cluster: any) => {
+    const focusMatch = cluster?.ranking?.focusMatch || 0;
+    const personalizationMatch = cluster?.ranking?.personalizationMatch || 0;
+    const concernMatch = cluster?.ranking?.concernMatch || 0;
+    const areaMatch = cluster?.ranking?.areaMatch || 0;
+
+    if (!hasExplicitFocus) return focusMatch >= focusThreshold;
+
+    return (
+      focusMatch >= focusThreshold &&
+      (personalizationMatch >= 0.5 || concernMatch >= 0.35 || areaMatch >= 0.35)
+    );
+  });
+  const nonFocus = ranked.filter((cluster: any) => !focusFirst.includes(cluster));
 
   const focusQuota = Math.ceil(requestedLimit * 0.75);
-  const trendingQuota = Math.max(1, Math.min(requestedLimit - focusQuota, Math.ceil(requestedLimit * 0.25)));
+  const trendingQuota = hasExplicitFocus
+    ? Math.max(1, Math.min(2, requestedLimit - focusQuota))
+    : Math.max(1, Math.min(requestedLimit - focusQuota, Math.ceil(requestedLimit * 0.25)));
   const focusSelected = focusFirst.slice(0, focusQuota);
   const selectedIds = new Set(focusSelected.map((cluster: any) => cluster.cluster_id));
 
@@ -689,7 +715,7 @@ async function buildBriefPayload({ preferences = {}, timeHorizon = '30d', tierFi
     (Array.isArray(preferences?.keywords) && preferences.keywords.length)
   );
   const requestedLimit = Number(limit);
-  const topClusters = pickPrioritizedClusters(ranked, requestedLimit, hasPersonalization);
+  const topClusters = pickPrioritizedClusters(ranked, requestedLimit, preferences);
   const briefs = (await Promise.all(topClusters.map((cluster: any) => generateBrief(cluster, preferences)))).filter(Boolean);
 
   pipelineState.lastRunAt = new Date().toISOString();

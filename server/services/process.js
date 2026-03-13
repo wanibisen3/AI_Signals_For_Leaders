@@ -473,7 +473,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         const focusSemanticMatch = (leaderFitDetails.concernMatch >= 0.45) || (leaderFitDetails.areaMatch >= 0.45);
         const focusPriority = hasPersonalization && (focusCategoryMatch || focusSemanticMatch) ? 1 : 0;
         const focusMatch = hasPersonalization
-            ? clamp((focusCategoryMatch ? 0.35 : 0) + (leaderFitDetails.concernMatch * 0.45) + (leaderFitDetails.areaMatch * 0.2), 0, 1)
+            ? clamp((focusCategoryMatch ? 0.15 : 0) + (leaderFitDetails.concernMatch * 0.55) + (leaderFitDetails.areaMatch * 0.3), 0, 1)
             : 0.5;
         const focusBoost = focusMatch * 4.8;
         const stalePenalty = freshnessDetails.ageDays > 30 ? Math.min(1.6, (freshnessDetails.ageDays - 30) * 0.03) : 0;
