@@ -95,8 +95,8 @@ describe('signal reranking', () => {
     const recent = new Date().toISOString();
     const clusters = [
       makeCluster({
-        title: 'Startup raises funding for AI-native cloud infrastructure',
-        text: 'A cloud platform raised a large Series B to expand AI infrastructure and challenge hyperscalers.',
+        title: 'Listen Labs secures funding amid AI data integrity claims',
+        text: 'A startup raised a large funding round and says it improves participant data integrity for AI research workflows.',
         category: 'Product',
         publishedAt: recent
       }),
@@ -116,6 +116,7 @@ describe('signal reranking', () => {
 
     expect(ranked[0].category).toBe('Risk');
     expect(ranked[0].ranking.concernMatch).toBeGreaterThan(ranked[1].ranking.concernMatch);
-    expect(ranked[1].ranking.focusMatch).toBeLessThan(0.55);
+    expect(ranked[1].ranking.concernMatch).toBeLessThan(0.2);
+    expect(ranked[1].ranking.focusMatch).toBeLessThan(0.3);
   });
 });

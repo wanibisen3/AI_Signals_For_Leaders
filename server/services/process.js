@@ -115,6 +115,23 @@ function tokenize(text = '') {
         .filter((t) => t.length > 2 && !stopWords.has(t));
 }
 
+const GENERIC_CONCERN_TOKENS = new Set([
+    'ai',
+    'artificial',
+    'intelligence',
+    'data',
+    'business',
+    'leader',
+    'leaders',
+    'company',
+    'companies',
+    'signal',
+    'signals',
+    'news',
+    'update',
+    'updates'
+]);
+
 function stemToken(token = '') {
     return String(token || '')
         .replace(/(ing|ed|es|s)$/i, '')
@@ -368,14 +385,17 @@ function computeLeaderFit(cluster, preferences = {}) {
     const areaTerms = areas.flatMap((area) => DECISION_AREA_KEYWORDS[area] || [String(area || '')]);
     const areaMatch = areaTerms.length ? termCoverage(text, areaTerms) : 0;
 
-    const concernTokens = tokenize(concern);
+    const concernTokens = tokenize(concern).filter((token) => !GENERIC_CONCERN_TOKENS.has(token));
     const expandedConcernTerms = new Set(concernTokens);
     for (const token of concernTokens) {
         const synonyms = MAIN_CONCERN_SYNONYMS[token] || [];
         for (const synonym of synonyms) expandedConcernTerms.add(synonym);
     }
     const concernTerms = Array.from(expandedConcernTerms);
-    const concernTokenMatch = concernTerms.length ? termCoverage(text, concernTerms) : 0;
+    const fallbackConcernTokens = tokenize(concern);
+    const concernTokenMatch = concernTerms.length
+        ? termCoverage(text, concernTerms)
+        : (fallbackConcernTokens.length ? termCoverage(text, fallbackConcernTokens) * 0.35 : 0);
     const concernPhraseMatch = concern && termMatchesText(text, concern) ? 1 : 0;
     const concernMatch = concern
         ? Math.min(1, concernTokenMatch * 0.65 + concernPhraseMatch * 0.35)

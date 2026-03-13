@@ -66,6 +66,8 @@ const MAIN_CONCERN_SYNONYMS = {
     productivity: ['automation', 'workflow', 'velocity', 'copilot'],
     regulation: ['policy', 'compliance', 'legal', 'governance'],
     security: ['breach', 'vulnerability', 'incident', 'safety'],
+    leak: ['breach', 'exfiltration', 'exposure', 'spillage', 'leakage'],
+    leaks: ['breach', 'exfiltration', 'exposure', 'spillage', 'leakage'],
     growth: ['adoption', 'distribution', 'go to market', 'customer'],
     revenue: ['sales', 'monetization', 'pricing', 'enterprise deals']
 };

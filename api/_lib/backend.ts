@@ -662,7 +662,7 @@ function pickPrioritizedClusters(ranked: any[], requestedLimit: number, preferen
 
     return (
       focusMatch >= focusThreshold &&
-      (personalizationMatch >= 0.5 || concernMatch >= 0.35 || areaMatch >= 0.35)
+      (personalizationMatch >= 0.55 || concernMatch >= 0.45 || areaMatch >= 0.45)
     );
   });
   const nonFocus = ranked.filter((cluster: any) => !focusFirst.includes(cluster));
