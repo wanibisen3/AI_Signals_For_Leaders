@@ -21,24 +21,24 @@ jobs:
           version: latest
 
       - name: Validate Supabase secrets
+        id: check_secrets
         run: |
           set -euo pipefail
           missing=0
           for name in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD; do
             if [ -z "${!name:-}" ]; then
-              echo "::error::Missing required GitHub secret: ${name}"
+              echo "::warning::Missing required GitHub secret: ${name}. Skipping Supabase migrations."
               missing=1
             fi
           done
-          if [ "$missing" -ne 0 ]; then
-            exit 1
-          fi
+          echo "has_secrets=$([ $missing -eq 0 ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
       - name: Link Supabase project
+        if: steps.check_secrets.outputs.has_secrets == 'true'
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -46,6 +46,7 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
       - name: Apply migrations
+        if: steps.check_secrets.outputs.has_secrets == 'true'
         run: supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
