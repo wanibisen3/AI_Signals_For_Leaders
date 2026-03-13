@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refactor Module"
+  short_description: "Safely refactor one module"
+  default_prompt: "Use $refactor-module to refactor an existing module with the smallest safe behavior-preserving changes."

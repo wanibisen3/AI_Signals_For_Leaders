@@ -17,6 +17,10 @@ export interface User {
   id?: string;
   email: string;
   preferences: UserPreferences;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  subscription_tier?: string;
+  subscription_status?: string;
 }
 
 export interface TokenTier {

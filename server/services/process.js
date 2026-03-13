@@ -1,4 +1,3 @@
-const { OpenAI } = require('openai');
 const {
     CATEGORY_KEYWORDS,
     EVENT_KEYWORDS,
@@ -7,10 +6,6 @@ const {
     DECISION_AREA_KEYWORDS,
     MAIN_CONCERN_SYNONYMS
 } = require('../constants');
-
-const openai = process.env.OPENAI_API_KEY
-    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    : null;
 
 const TIER_PRIORITY = {
     A: 3,
@@ -209,7 +204,6 @@ function choosePreferredItem(existing, candidate) {
         return candidateTier > existingTier ? candidate : existing;
     }
 
-    // If both are primary sources, keep the earliest publication as canonical origin.
     if (existing.source_tier === 'A' && candidate.source_tier === 'A') {
         const existingTime = toDate(existing.published_at).getTime();
         const candidateTime = toDate(candidate.published_at).getTime();
@@ -361,7 +355,6 @@ function computeLeaderFit(cluster, preferences = {}) {
         ? clamp((roleMatch * 0.35) + (areaMatch * 0.25) + (concernMatch * 0.4), 0, 1)
         : 0.5;
 
-    // High influence so ordering actually responds to executive intent.
     const score = hasPersonalization
         ? clamp(0.25 + personalizationMatch * 2.75, 0.25, 3)
         : 1.1;
@@ -379,7 +372,7 @@ function computeNoisePenalty(cluster) {
     const text = `${cluster.representative.clean_title} ${cluster.representative.clean_text}`.toLowerCase();
     let penalty = 0;
     if (/(amazing|revolutionary|game[- ]?changing|unbelievable|must see)/.test(text)) penalty += 0.8;
-    if (cluster.items.length > 6) penalty += 0.3; // potential syndication
+    if (cluster.items.length > 6) penalty += 0.3;
     return Math.min(2, penalty);
 }
 
@@ -396,7 +389,6 @@ function computeFreshness(cluster) {
     const now = Date.now();
     const ageDays = Math.max(0, (now - publishedAt.getTime()) / (24 * 60 * 60 * 1000));
 
-    // Rapid decay after ~2 weeks; very old stories should not pin the top.
     const freshness = clamp(Math.exp(-ageDays / 18), 0.15, 1);
     return {
         freshness,
@@ -444,7 +436,6 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
             (Array.isArray(preferences?.decisionAreas) && preferences.decisionAreas.length)
         );
 
-        // Penalize low-match items when user provided explicit personalization.
         const lowMatchPenalty = hasPersonalization && leaderFitDetails.personalizationMatch < 0.2 ? 1.35 : 0;
         const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 0.9 : 0;
         const focusCategoryMatch = preferredCategories.includes(cluster.category);
@@ -492,113 +483,11 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
     return scored;
 }
 
-function fallbackBrief(cluster, index = 0) {
-    const item = cluster.representative;
-    const personalizationMatch = cluster.ranking?.personalizationMatch;
-    return {
-        id: `brief-${stableId(`${cluster.cluster_id}-${index}`)}`,
-        clusterId: cluster.cluster_id,
-        headline: item.clean_title,
-        summary: item.clean_text || 'No summary available.',
-        whatHappened: item.clean_text || item.clean_title,
-        whyItMatters: 'Potential impact on roadmap, operating model, or competitive dynamics.',
-        leaderTakeaway: 'Assign a quick owner to evaluate impact and decide monitor vs experiment.',
-        whatToConsiderNext: [
-            'Assess relevance to current strategic priorities',
-            'Estimate risk and implementation effort',
-            'Decide monitor vs pilot in next planning cycle'
-        ],
-        source: item.source,
-        date: formatDateISO(item.published_at),
-        category: cluster.category || 'Strategy',
-        reviewStatus: 'pending_review',
-        approvedAt: null,
-        approvedBy: null,
-        eventType: cluster.event_type,
-        supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
-        matchScore: personalizationMatch !== undefined ? Math.round(personalizationMatch * 100) : 50,
-        matchBreakdown: cluster.ranking ? {
-            role: Math.round((cluster.ranking.roleMatch || 0) * 100),
-            focus: Math.round((cluster.ranking.focusMatch || 0) * 100),
-            decisionAreas: Math.round((cluster.ranking.areaMatch || 0) * 100)
-        } : undefined
-    };
-}
-
-async function generateBrief(cluster, preferences = {}) {
-    if (!openai) return fallbackBrief(cluster);
-    const item = cluster.representative;
-
-    const prompt = `
-Create one executive decision brief in JSON.
-Audience role: ${preferences.role || 'Leader'}
-Decision areas: ${(preferences.decisionAreas || []).join(', ') || 'General'}
-Main concern: ${preferences.mainConcern || 'N/A'}
-
-Facts:
-Title: ${item.clean_title}
-Source: ${item.source}
-Published at: ${item.published_at}
-Summary: ${item.clean_text}
-Cluster event type: ${cluster.event_type}
-Cluster category: ${cluster.category}
-
-Return JSON with fields:
-headline, summary, whatHappened, whyItMatters, leaderTakeaway, whatToConsiderNext (array of 3 strings), category
-
-CRITICAL: In the 'whyItMatters' and 'leaderTakeaway' sections, directly address the user's main concern: "${preferences.mainConcern || 'General impact'}". Explain why this news is relevant to THAT specific objective.
-Be concrete and conservative.`;
-
-    try {
-        const response = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-            temperature: 0.2,
-            response_format: { type: 'json_object' },
-            messages: [
-                { role: 'system', content: 'You are an executive AI strategy analyst. Return valid JSON only.' },
-                { role: 'user', content: prompt }
-            ]
-        });
-
-        const parsed = JSON.parse(response.choices[0]?.message?.content || '{}');
-        return {
-            id: `brief-${stableId(`${cluster.cluster_id}-${item.canonical_url || item.url || item.clean_title}`)}`,
-            clusterId: cluster.cluster_id,
-            headline: parsed.headline || item.clean_title,
-            summary: parsed.summary || item.clean_text || '',
-            whatHappened: parsed.whatHappened || item.clean_text || item.clean_title,
-            whyItMatters: parsed.whyItMatters || 'Potential strategic impact.',
-            leaderTakeaway: parsed.leaderTakeaway || 'Monitor and evaluate for strategic fit.',
-            whatToConsiderNext: Array.isArray(parsed.whatToConsiderNext) && parsed.whatToConsiderNext.length
-                ? parsed.whatToConsiderNext.slice(0, 3)
-                : fallbackBrief(cluster).whatToConsiderNext,
-            source: item.source,
-            date: formatDateISO(item.published_at),
-            category: parsed.category || cluster.category || 'Strategy',
-            reviewStatus: 'pending_review',
-            approvedAt: null,
-            approvedBy: null,
-            eventType: cluster.event_type,
-            supportingSources: cluster.items.slice(0, 3).map((x) => ({ source: x.source, url: x.url })),
-            matchScore: cluster.ranking?.personalizationMatch !== undefined
-                ? Math.round(cluster.ranking.personalizationMatch * 100)
-                : (cluster.ranking?.leaderFit ? Math.round((cluster.ranking.leaderFit / 3) * 100) : 50),
-            matchBreakdown: cluster.ranking ? {
-                role: Math.round((cluster.ranking.roleMatch || 0) * 100),
-                focus: Math.round((cluster.ranking.focusMatch || 0) * 100),
-                decisionAreas: Math.round((cluster.ranking.areaMatch || 0) * 100)
-            } : undefined
-        };
-    } catch (error) {
-        console.error('LLM generation failed, using fallback:', error.message);
-        return fallbackBrief(cluster);
-    }
-}
-
 module.exports = {
     normalizeItems,
     deduplicateItems,
     clusterItems,
     scoreAndRankClusters,
-    generateBrief
+    stableId,
+    formatDateISO
 };

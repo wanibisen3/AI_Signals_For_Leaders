@@ -7,7 +7,8 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const { fetchNews } = require('./services/ingest');
-const { normalizeItems, deduplicateItems, clusterItems, scoreAndRankClusters, generateBrief } = require('./services/process');
+const { normalizeItems, deduplicateItems, clusterItems, scoreAndRankClusters } = require('./services/process');
+const { generateBrief } = require('./services/generation');
 
 const app = express();
 const port = process.env.PORT || 3001;
