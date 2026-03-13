@@ -9,9 +9,9 @@ const {
   normalizeItems,
   deduplicateItems,
   clusterItems,
-  scoreAndRankClusters,
-  generateBrief
+  scoreAndRankClusters
 } = require('../../server/services/process');
+const { generateBrief } = require('../../server/services/generation');
 
 type SupabaseLike = ReturnType<typeof createClient> | null;
 type AnyReq = any;
