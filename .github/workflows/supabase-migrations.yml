@@ -1,5 +1,8 @@
 name: Supabase Migrations
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   push:
     branches:
@@ -13,10 +16,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI Natively
+      - name: Setup Supabase Natively
         run: |
-          wget -qO- https://raw.githubusercontent.com/supabase/cli/main/install.sh | bash
+          wget -q https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz
+          tar -xzf supabase_linux_amd64.tar.gz
           sudo mv supabase /usr/local/bin/
+          supabase -v
 
       - name: Validate Supabase secrets
         id: check_secrets
