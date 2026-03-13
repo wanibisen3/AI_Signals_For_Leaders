@@ -1308,12 +1308,13 @@ const App = () => {
     };
     setTokenBalance(dashboard.tokenBalance);
     setBriefs(dashboard.briefs || []);
-    if (user) {
-      const updated = { ...user, preferences: dashboard.personalization || user.preferences };
-      setUser(updated);
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser;
+      const updated = { ...currentUser, preferences: dashboard.personalization || currentUser.preferences };
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       if (token) persistUser(updated, token);
-    }
+      return updated;
+    });
   };
 
   const handlePersonalizationComplete = async (prefs: UserPreferences) => {
@@ -1329,12 +1330,13 @@ const App = () => {
       });
       const data = await parseApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Failed to save personalization');
-      if (user) {
-        const updated = { ...user, preferences: data.personalization || prefs };
-        setUser(updated);
+      setUser((currentUser) => {
+        if (!currentUser) return currentUser;
+        const updated = { ...currentUser, preferences: data.personalization || prefs };
         const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
         if (token) persistUser(updated, token);
-      }
+        return updated;
+      });
       if (Array.isArray(data.briefs)) setBriefs(data.briefs);
       setTokenBalance(Number(data.tokenBalance || tokenBalance));
       if (data.requiresTopUp) {
@@ -1346,6 +1348,7 @@ const App = () => {
       if (!data.requiresTopUp) {
         setStatusMessage(data.generated ? 'Personalization saved and briefs generated.' : 'Personalization saved.');
       }
+      await loadDashboard();
       setSelectedBrief(null);
       setView('dashboard');
     } catch (error) {
