@@ -115,6 +115,12 @@ function tokenize(text = '') {
         .filter((t) => t.length > 2 && !stopWords.has(t));
 }
 
+function stemToken(token = '') {
+    return String(token || '')
+        .replace(/(ing|ed|es|s)$/i, '')
+        .trim();
+}
+
 function fractionMatch(text = '', terms = []) {
     if (!terms.length) return 0;
     let hits = 0;
@@ -122,6 +128,31 @@ function fractionMatch(text = '', terms = []) {
         if (text.includes(normalizeText(term))) hits += 1;
     }
     return hits / terms.length;
+}
+
+function termMatchesText(text = '', term = '') {
+    const normalizedText = normalizeText(text);
+    const normalizedTerm = normalizeText(term);
+    if (!normalizedText || !normalizedTerm) return false;
+    if (normalizedText.includes(normalizedTerm)) return true;
+
+    const textTokens = tokenize(normalizedText).map(stemToken).filter(Boolean);
+    const termTokens = tokenize(normalizedTerm).map(stemToken).filter(Boolean);
+    if (!termTokens.length || !textTokens.length) return false;
+
+    return termTokens.every((termToken) => textTokens.some((textToken) => textToken === termToken || textToken.includes(termToken) || termToken.includes(textToken)));
+}
+
+function termCoverage(text = '', terms = []) {
+    const uniqueTerms = Array.from(new Set((terms || []).map((term) => normalizeText(term)).filter(Boolean)));
+    if (!uniqueTerms.length) return 0;
+
+    let hits = 0;
+    for (const term of uniqueTerms) {
+        if (termMatchesText(text, term)) hits += 1;
+    }
+
+    return hits / uniqueTerms.length;
 }
 
 function normalizeItems(rawItems) {
@@ -332,10 +363,10 @@ function computeLeaderFit(cluster, preferences = {}) {
     const text = normalizeText(`${cluster.representative.clean_title} ${cluster.representative.clean_text} ${cluster.category || ''}`);
 
     const roleTerms = ROLE_KEYWORDS[role] || ROLE_KEYWORDS.Other || [];
-    const roleMatch = role ? fractionMatch(text, roleTerms) : 0;
+    const roleMatch = role ? termCoverage(text, roleTerms) : 0;
 
     const areaTerms = areas.flatMap((area) => DECISION_AREA_KEYWORDS[area] || [String(area || '')]);
-    const areaMatch = areaTerms.length ? fractionMatch(text, areaTerms) : 0;
+    const areaMatch = areaTerms.length ? termCoverage(text, areaTerms) : 0;
 
     const concernTokens = tokenize(concern);
     const expandedConcernTerms = new Set(concernTokens);
@@ -344,15 +375,15 @@ function computeLeaderFit(cluster, preferences = {}) {
         for (const synonym of synonyms) expandedConcernTerms.add(synonym);
     }
     const concernTerms = Array.from(expandedConcernTerms);
-    const concernTokenMatch = concernTerms.length ? fractionMatch(text, concernTerms) : 0;
-    const concernPhraseMatch = concern && text.includes(normalizeText(concern)) ? 1 : 0;
+    const concernTokenMatch = concernTerms.length ? termCoverage(text, concernTerms) : 0;
+    const concernPhraseMatch = concern && termMatchesText(text, concern) ? 1 : 0;
     const concernMatch = concern
-        ? Math.min(1, concernTokenMatch * 0.8 + concernPhraseMatch * 0.2)
+        ? Math.min(1, concernTokenMatch * 0.65 + concernPhraseMatch * 0.35)
         : 0;
 
     const hasPersonalization = Boolean(role || concern || areas.length);
     const personalizationMatch = hasPersonalization
-        ? clamp((roleMatch * 0.35) + (areaMatch * 0.25) + (concernMatch * 0.4), 0, 1)
+        ? clamp((roleMatch * 0.2) + (areaMatch * 0.25) + (concernMatch * 0.55), 0, 1)
         : 0.5;
 
     const score = hasPersonalization
@@ -437,18 +468,20 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
         );
 
         const lowMatchPenalty = hasPersonalization && leaderFitDetails.personalizationMatch < 0.2 ? 1.35 : 0;
-        const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 0.9 : 0;
+        const mismatchPenalty = hasPersonalization ? (1 - leaderFitDetails.personalizationMatch) * 1.25 : 0;
         const focusCategoryMatch = preferredCategories.includes(cluster.category);
         const focusSemanticMatch = (leaderFitDetails.concernMatch >= 0.45) || (leaderFitDetails.areaMatch >= 0.45);
         const focusPriority = hasPersonalization && (focusCategoryMatch || focusSemanticMatch) ? 1 : 0;
         const focusMatch = hasPersonalization
-            ? clamp((focusCategoryMatch ? 0.6 : 0) + (leaderFitDetails.concernMatch * 0.25) + (leaderFitDetails.areaMatch * 0.15), 0, 1)
+            ? clamp((focusCategoryMatch ? 0.35 : 0) + (leaderFitDetails.concernMatch * 0.45) + (leaderFitDetails.areaMatch * 0.2), 0, 1)
             : 0.5;
-        const focusBoost = focusMatch * 3.2;
+        const focusBoost = focusMatch * 4.8;
         const stalePenalty = freshnessDetails.ageDays > 30 ? Math.min(1.6, (freshnessDetails.ageDays - 30) * 0.03) : 0;
+        const freshnessBoost = freshnessDetails.freshness * 1.25;
 
         const score = trust * impact * urgency * leaderFitDetails.score * freshnessDetails.freshness
             + focusBoost
+            + freshnessBoost
             - stalePenalty
             - noise
             - lowMatchPenalty
