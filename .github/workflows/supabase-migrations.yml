@@ -1,8 +1,5 @@
 name: Supabase Migrations
 
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
-
 on:
   push:
     branches:
@@ -16,15 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      - name: Setup Supabase CLI Natively
+        run: |
+          wget -qO- https://raw.githubusercontent.com/supabase/cli/main/install.sh | bash
+          sudo mv supabase /usr/local/bin/
 
       - name: Validate Supabase secrets
         id: check_secrets
