@@ -1318,7 +1318,6 @@ const App = () => {
 
   const handlePersonalizationComplete = async (prefs: UserPreferences) => {
     setPersonalizationOpen(false);
-    setView('dashboard');
     setLoading(true);
     setStatusMessage('');
     setStatusOutOfTokens(false);
@@ -1336,7 +1335,7 @@ const App = () => {
         const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
         if (token) persistUser(updated, token);
       }
-      if (data.briefs) setBriefs(data.briefs);
+      if (Array.isArray(data.briefs)) setBriefs(data.briefs);
       setTokenBalance(Number(data.tokenBalance || tokenBalance));
       if (data.requiresTopUp) {
         setStatusOutOfTokens(true);
@@ -1347,6 +1346,8 @@ const App = () => {
       if (!data.requiresTopUp) {
         setStatusMessage(data.generated ? 'Personalization saved and briefs generated.' : 'Personalization saved.');
       }
+      setSelectedBrief(null);
+      setView('dashboard');
     } catch (error) {
       setStatusMessage(error instanceof Error ? error.message : 'Failed to save personalization');
     } finally {
