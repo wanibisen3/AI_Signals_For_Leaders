@@ -4,7 +4,8 @@ const {
     ENTITY_KEYWORDS,
     ROLE_KEYWORDS,
     DECISION_AREA_KEYWORDS,
-    MAIN_CONCERN_SYNONYMS
+    MAIN_CONCERN_SYNONYMS,
+    STRATEGIC_KEYWORDS
 } = require('../constants');
 
 const TIER_PRIORITY = {
@@ -289,7 +290,7 @@ function deduplicateItems(items) {
     const uniqueByUrl = Array.from(byCanonicalUrl.values());
     const deduped = [];
     const fingerprints = [];
-    const threshold = Number(process.env.SEMANTIC_DEDUPE_THRESHOLD || 0.9);
+    const threshold = Number(process.env.SEMANTIC_DEDUPE_THRESHOLD || 0.85);
 
     for (const candidate of uniqueByUrl) {
         const candidateFp = semanticFingerprint(candidate);
@@ -361,9 +362,10 @@ function clusterItems(items) {
 function computeImpact(cluster) {
     const text = `${cluster.representative.clean_title} ${cluster.representative.clean_text}`.toLowerCase();
     let impact = 0.8;
-    if (/(pricing|cost|launch|release|security|compliance|availability)/.test(text)) impact += 1.4;
-    if (/(major|breakthrough|enterprise|platform|general availability)/.test(text)) impact += 0.8;
-    return Math.min(3, impact);
+    if (/(pricing|cost|launch|release|security|compliance|availability|ga|general availability)/.test(text)) impact += 1.4;
+    if (/(major|breakthrough|enterprise|platform|partnership|acquisition|merger)/.test(text)) impact += 0.8;
+    if (/(paradigm shift|disruptive|infrastructure|low latency|high throughput)/.test(text)) impact += 0.5;
+    return Math.min(3.5, impact);
 }
 
 function computeUrgency(cluster) {
@@ -410,12 +412,17 @@ function computeLeaderFit(cluster, preferences = {}) {
         ? clamp(0.25 + personalizationMatch * 2.75, 0.25, 3)
         : 1.1;
 
+    // Strategic boost based on modern AI shifts
+    const strategicMatch = termCoverage(text, STRATEGIC_KEYWORDS);
+    const strategicBoost = strategicMatch * 0.5;
+
     return {
-        score,
+        score: score + strategicBoost,
         personalizationMatch,
         roleMatch,
         areaMatch,
-        concernMatch
+        concernMatch,
+        strategicMatch
     };
 }
 
@@ -521,6 +528,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
                 roleMatch: leaderFitDetails.roleMatch,
                 areaMatch: leaderFitDetails.areaMatch,
                 concernMatch: leaderFitDetails.concernMatch,
+                strategicMatch: leaderFitDetails.strategicMatch,
                 noise,
                 score
             }

@@ -119,4 +119,33 @@ describe('signal reranking', () => {
     expect(ranked[1].ranking.concernMatch).toBeLessThan(0.2);
     expect(ranked[1].ranking.focusMatch).toBeLessThan(0.3);
   });
+
+  it('boosts signals that contain strategic breakthrough keywords', () => {
+    const recent = new Date().toISOString();
+    const clusters = [
+      makeCluster({
+        title: 'Minor update to AI assistant UI',
+        text: 'The assistant now has a slightly different blue color for the chat bubble.',
+        category: 'Product',
+        publishedAt: recent
+      }),
+      makeCluster({
+        title: 'New paradigm shift in low-latency infrastructure',
+        text: 'Major breakthrough in high-throughput inference for production-ready open weights models.',
+        category: 'Product',
+        publishedAt: recent
+      })
+    ];
+
+    const ranked = scoreAndRankClusters(clusters, {
+      role: 'Product Leader',
+      mainConcern: 'AI Performance',
+      decisionAreas: ['Product']
+    });
+
+    // The strategic one should be first despite both being 'Product' and 'recent'
+    expect(ranked[0].representative.clean_title).toContain('paradigm shift');
+    expect(ranked[0].ranking.strategicMatch).toBeGreaterThan(0);
+    expect(ranked[0].ranking.score).toBeGreaterThan(ranked[1].ranking.score);
+  });
 });
