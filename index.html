@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -18,40 +17,113 @@
               colors: {
                 "primary": "#3b82f6",
                 "accent": "#60a5fa",
-                "background-dark": "#0B0F19",
-                "surface-dark": "#111827",
-                "surface-border": "#1f2937",
-                "surface-glass": "rgba(17, 24, 39, 0.7)"
+                "gold": "#f59e0b",
+                "gold-light": "#fbbf24",
+                "emerald-signal": "#10b981",
+                "rose-signal": "#f43f5e",
+                "background-dark": "#070B12",
+                "surface-dark": "#0C1119",
+                "surface-mid": "#101620",
+                "surface-border": "#1a2333",
+                "surface-border-bright": "#2d3f55",
+                "surface-glass": "rgba(10, 14, 22, 0.85)"
               },
               fontFamily: {
-                "sans": ["Inter", "sans-serif"],
+                "sans": ["Plus Jakarta Sans", "sans-serif"],
                 "display": ["Outfit", "sans-serif"],
                 "mono": ["JetBrains Mono", "monospace"]
               },
               animation: {
-                'fade-up': 'fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'fade-up': 'fadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                'fade-in': 'fadeIn 0.4s ease forwards',
                 'float': 'float 6s ease-in-out infinite',
                 'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'shimmer': 'shimmer 2.5s linear infinite',
+                'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+                'spin-slow': 'spin 8s linear infinite',
               },
               keyframes: {
                 fadeUp: {
-                  '0%': { opacity: '0', transform: 'translateY(20px)' },
+                  '0%': { opacity: '0', transform: 'translateY(28px)' },
                   '100%': { opacity: '1', transform: 'translateY(0)' },
                 },
+                fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
                 float: {
                   '0%, 100%': { transform: 'translateY(0)' },
                   '50%': { transform: 'translateY(-10px)' },
-                }
+                },
+                shimmer: {
+                  '0%': { backgroundPosition: '-500px 0' },
+                  '100%': { backgroundPosition: '500px 0' },
+                },
+                glowPulse: {
+                  '0%, 100%': { opacity: '0.5', transform: 'scale(1)' },
+                  '50%': { opacity: '1', transform: 'scale(1.12)' },
+                },
               }
             },
           },
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #070B12; }
+
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1a2333; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #2d3f55; }
+
+        /* Category accent bars on brief cards */
+        .cat-product  { border-left: 3px solid #3b82f6; }
+        .cat-market   { border-left: 3px solid #f59e0b; }
+        .cat-risk     { border-left: 3px solid #f43f5e; }
+        .cat-ops      { border-left: 3px solid #10b981; }
+        .cat-default  { border-left: 3px solid #334155; }
+
+        /* Gradient text */
+        .g-text-white { background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .g-text-gold  { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 60%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .g-text-blue  { background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        /* Pulsing relevance indicator */
+        @keyframes relevancePing {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
+          60%       { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+        }
+        .relevance-dot {
+          width: 8px; height: 8px; border-radius: 50%;
+          background: #3b82f6; flex-shrink: 0;
+          animation: relevancePing 2.2s ease-in-out infinite;
+        }
+        .relevance-dot-gold {
+          background: #f59e0b;
+          animation: relevancePing 2.2s ease-in-out infinite;
+        }
+        @keyframes relevancePing {}
+
+        /* Shimmer for premium label */
+        .shimmer-gold {
+          background: linear-gradient(90deg, #d97706 0%, #fde68a 40%, #d97706 80%);
+          background-size: 400px 100%;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+          animation: shimmer 2.5s linear infinite;
+        }
+
+        /* Hero grid lines */
+        .grid-bg {
+          background-image:
+            linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+          background-size: 60px 60px;
+        }
+
+        /* Premium glass card */
+        .glass-card {
+          background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.06);
+        }
     </style>
 <script type="importmap">
 {

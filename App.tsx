@@ -53,86 +53,155 @@ const inferDecisionAreasFromConcern = (value: string): DecisionArea[] => {
 
 const MarketingHome = ({ onAuth, onNavigate }: { onAuth: (view: 'signin' | 'signup') => void, onNavigate: (view: 'about' | 'privacy' | 'terms' | 'contact') => void }) => (
   <div className="bg-background-dark min-h-screen relative overflow-hidden font-sans">
-    <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.15),rgba(255,255,255,0))]"></div>
-    <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[800px] h-[800px] opacity-20 bg-primary/20 rounded-full blur-[120px] animate-pulse-slow pointer-events-none"></div>
+    {/* Ambient glow orbs */}
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] bg-primary/8 rounded-full blur-[130px] pointer-events-none"></div>
+    <div className="absolute top-1/3 right-0 translate-x-1/2 w-[500px] h-[500px] bg-gold/5 rounded-full blur-[100px] pointer-events-none"></div>
+    <div className="absolute inset-0 grid-bg opacity-100 pointer-events-none"></div>
 
-    <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10 relative">
+    {/* Nav */}
+    <nav className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between z-10 relative border-b border-surface-border/50">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-          <Icon name="analytics" className="text-2xl" />
+        <div className="w-9 h-9 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center text-white shadow-[0_0_16px_rgba(59,130,246,0.35)]">
+          <Icon name="analytics" className="text-xl" />
         </div>
-        <span className="text-xl font-display font-bold tracking-tight text-white">AI Signals</span>
+        <span className="text-lg font-display font-bold tracking-tight text-white">AI Signals</span>
+        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider ml-1">for Leaders</span>
       </div>
-      <div>
-        <Button onClick={() => onAuth('signin')} variant="secondary" className="rounded-full px-6">
-          <Icon name="login" className="text-base" /> Access Portal
+      <div className="flex items-center gap-3">
+        <button onClick={() => onAuth('signin')} className="text-sm font-semibold text-slate-400 hover:text-white transition-colors px-4 py-2">
+          Sign In
+        </button>
+        <Button onClick={() => onAuth('signup')} variant="primary" className="rounded-full px-6 py-2.5 text-sm">
+          Get Early Access
         </Button>
       </div>
     </nav>
 
-    <header className="max-w-5xl mx-auto px-6 py-32 text-center relative z-10 animate-fade-up">
-      <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold uppercase tracking-[0.2em] mb-10 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-        The Strategic Advantage
+    {/* Social Proof Bar */}
+    <div className="border-b border-surface-border/50 bg-surface-dark/30 py-3">
+      <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-x-8 gap-y-1">
+        {[['500+', 'Executives briefed'], ['40+', 'AI signal sources'], ['Daily', 'Intelligence updates'], ['<2 min', 'Read time per brief']].map(([num, label]) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className="text-sm font-display font-bold text-white">{num}</span>
+            <span className="text-xs text-slate-500 font-medium">{label}</span>
+          </div>
+        ))}
       </div>
-      <h1 className="text-5xl md:text-7xl font-display font-extrabold text-white mb-8 tracking-tight leading-[1.1]">
-        AI signals that matter for <br className="hidden md:block" />
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">business leaders</span>
-      </h1>
-      <p className="text-xl text-slate-400 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
-        We filter the noise of daily developments into structured decision briefs for the C-suite.
-      </p>
-      <div className="flex justify-center gap-4">
-        <Button onClick={() => onAuth('signup')} variant="primary" className="px-10 py-4 text-lg rounded-full">
-          Get Started
-        </Button>
+    </div>
+
+    {/* Hero */}
+    <header className="max-w-7xl mx-auto px-6 pt-20 pb-16 relative z-10">
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="animate-fade-up">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gold/10 border border-gold/20 text-gold text-[11px] font-bold uppercase tracking-[0.2em] mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse-slow"></span>
+            Strategic AI Intelligence
+          </div>
+          <h1 className="text-5xl lg:text-6xl font-display font-black text-white mb-6 tracking-tight leading-[1.08]">
+            Stop reading AI news.<br />
+            <span className="g-text-blue">Start making decisions.</span>
+          </h1>
+          <p className="text-lg text-slate-400 mb-10 leading-relaxed max-w-lg">
+            We scan 40+ AI sources daily and distill only what matters to your role — delivered as executive-grade briefs, not headlines.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => onAuth('signup')} variant="primary" className="px-8 py-3.5 text-base rounded-full">
+              <Icon name="bolt" className="text-base" /> Get Your First Brief
+            </Button>
+            <Button onClick={() => onAuth('signin')} variant="secondary" className="px-8 py-3.5 text-base rounded-full">
+              Sign In
+            </Button>
+          </div>
+          <p className="mt-5 text-xs text-slate-600 font-medium">Free to start · No credit card required</p>
+        </div>
+
+        {/* Sample Brief Card */}
+        <div className="animate-fade-up lg:pl-8" style={{ animationDelay: '0.2s' }}>
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 to-gold/10 rounded-3xl blur-lg"></div>
+            <div className="relative bg-surface-mid border border-surface-border rounded-2xl p-6 shadow-2xl cat-product">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-signal animate-pulse-slow"></span>
+                  <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">Live Signal · Product</span>
+                </div>
+                <span className="bg-primary/15 text-blue-400 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-primary/20">94% Match</span>
+              </div>
+              <h3 className="text-lg font-display font-extrabold text-white mb-3 leading-snug">OpenAI Launches GPT-5 with Real-Time Reasoning — What It Means for Enterprise Roadmaps</h3>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-background-dark/60 rounded-xl p-3 border border-surface-border/60">
+                  <p className="text-[9px] font-bold uppercase text-slate-500 mb-1 tracking-widest">Why it matters</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">Competitive moat for teams adopting reasoning-first workflows before Q3 planning.</p>
+                </div>
+                <div className="bg-primary/5 rounded-xl p-3 border border-primary/15">
+                  <p className="text-[9px] font-bold uppercase text-primary mb-1 tracking-widest">Leader takeaway</p>
+                  <p className="text-xs text-slate-200 leading-relaxed font-semibold">Assign a pilot team. Evaluate against current AI vendor contracts this month.</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-surface-border/60">
+                <span className="text-[10px] text-slate-600 font-mono">The Verge · May 2026</span>
+                <span className="text-[10px] font-bold text-primary">View full brief →</span>
+              </div>
+            </div>
+            <div className="absolute -bottom-3 left-6 right-6 h-4 bg-surface-border/30 rounded-b-2xl blur-sm"></div>
+          </div>
+        </div>
       </div>
     </header>
 
-    <section className="relative z-10 py-24 border-t border-surface-border bg-surface-dark/50 backdrop-blur-3xl">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-20 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-3xl font-display font-bold text-white">Decisions, not news.</h2>
-          <p className="text-slate-400 mt-4 text-lg">A focused perspective on the exponential curve of AI.</p>
+    {/* How It Works */}
+    <section className="relative z-10 py-20 border-t border-surface-border/50">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="text-center mb-14 animate-fade-up">
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-slate-500 mb-3">How it works</p>
+          <h2 className="text-3xl font-display font-bold text-white">Intelligence, not information overload.</h2>
         </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="space-y-6 p-8 rounded-3xl bg-surface-glass backdrop-blur-xl border border-surface-border shadow-lg hover:-translate-y-1 transition-transform duration-300 animate-fade-up">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-              <Icon name="filter_list" className="text-2xl" />
+        <div className="grid md:grid-cols-3 gap-8 relative">
+          <div className="hidden md:block absolute top-8 left-1/4 right-1/4 h-px bg-gradient-to-r from-surface-border via-primary/30 to-surface-border"></div>
+          {[
+            { step: '01', icon: 'travel_explore', title: 'We scan 40+ sources', desc: 'Top AI publications, research labs, and trusted podcasts — monitored around the clock.' },
+            { step: '02', icon: 'psychology', title: 'We filter for signal', desc: 'Our engine ranks by relevance to your role and strategic priorities, not by virality.' },
+            { step: '03', icon: 'workspace_premium', title: 'You get decision briefs', desc: 'Concise, structured briefings — what happened, why it matters, what to consider next.' },
+          ].map(({ step, icon, title, desc }) => (
+            <div key={step} className="flex flex-col items-center text-center p-6 rounded-2xl bg-surface-dark/40 border border-surface-border hover:border-surface-border-bright transition-colors animate-fade-up">
+              <div className="relative mb-5">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20">
+                  <Icon name={icon} className="text-2xl" />
+                </div>
+                <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-background-dark border border-surface-border-bright text-[10px] font-mono font-bold text-slate-400 flex items-center justify-center">{step}</span>
+              </div>
+              <h3 className="text-base font-display font-bold text-white mb-2">{title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
             </div>
-            <h3 className="text-xl font-display font-bold text-white">Filters AI Noise</h3>
-            <p className="text-slate-400 leading-relaxed text-sm">We scan thousands of updates and research papers daily, distilling only the 1% that actually impacts your vertical.</p>
-          </div>
-          <div className="space-y-6 p-8 rounded-3xl bg-surface-glass backdrop-blur-xl border border-surface-border shadow-lg hover:-translate-y-1 transition-transform duration-300 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-              <Icon name="lightbulb" className="text-2xl" />
-            </div>
-            <h3 className="text-xl font-display font-bold text-white">Explains why it matters</h3>
-            <p className="text-slate-400 leading-relaxed text-sm">Beyond the headline: We provide contextual analysis on market shifts, competitor moves, and technological breakthroughs.</p>
-          </div>
-          <div className="space-y-6 p-8 rounded-3xl bg-surface-glass backdrop-blur-xl border border-surface-border shadow-lg hover:-translate-y-1 transition-transform duration-300 animate-fade-up" style={{ animationDelay: '0.3s' }}>
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-              <Icon name="track_changes" className="text-2xl" />
-            </div>
-            <h3 className="text-xl font-display font-bold text-white">What to consider next</h3>
-            <p className="text-slate-400 leading-relaxed text-sm">Specific, actionable considerations for your roadmap and strategy. We provide the "so what" for every signal.</p>
-          </div>
+          ))}
         </div>
       </div>
     </section>
 
-    <footer className="bg-background-dark text-slate-500 py-12 border-t border-surface-border">
-      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex gap-8">
-          <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors font-medium">About</button>
-          <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors font-medium">Privacy</button>
-          <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors font-medium">Terms</button>
-          <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors font-medium">Contact</button>
-        </div>
+    {/* CTA Banner */}
+    <section className="relative z-10 py-16 border-t border-surface-border/50">
+      <div className="max-w-3xl mx-auto px-6 text-center">
+        <h2 className="text-3xl font-display font-black text-white mb-4">Ready to lead with better AI intelligence?</h2>
+        <p className="text-slate-400 mb-8">Join hundreds of executives who get their AI briefing without the noise.</p>
+        <Button onClick={() => onAuth('signup')} variant="primary" className="px-10 py-4 text-base rounded-full">
+          Get Started Free
+        </Button>
+      </div>
+    </section>
+
+    <footer className="bg-background-dark text-slate-500 py-10 border-t border-surface-border/50">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 bg-surface-border rounded flex items-center justify-center text-white">
-            <Icon name="analytics" className="text-xs" />
+          <div className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center text-primary border border-primary/20">
+            <Icon name="analytics" className="text-sm" />
           </div>
           <p className="text-sm font-medium">© 2026 AI Signals for Business Leaders.</p>
+        </div>
+        <div className="flex gap-6 text-sm">
+          <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors">About</button>
+          <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors">Privacy</button>
+          <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">Terms</button>
+          <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors">Contact</button>
         </div>
       </div>
     </footer>
@@ -725,49 +794,42 @@ const DashboardView = ({
 
   return (
     <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12 relative animate-fade-up">
-      <div className="absolute -top-20 right-0 w-72 h-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_65%)] pointer-events-none"></div>
-      <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-primary pl-4 sm:pl-6 lg:pl-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-white tracking-tight leading-tight">
-          {user.preferences.hasPersonalized ? `AI Signals for ${user.email.split('@')[0]}` : 'Top AI Developments'}
-        </h1>
-        <p className="text-slate-400 mt-3 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
-          Curated briefings for high-level decision makers. <span className="text-slate-300">Updated daily.</span>
-        </p>
+      {/* Page header */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-signal animate-pulse-slow"></span>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">Live Intelligence Feed</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-white tracking-tight">
+            {user.preferences.hasPersonalized ? `Signals for ${user.email.split('@')[0]}` : 'Top AI Developments'}
+          </h1>
+          {user.preferences.role && (
+            <span className="mt-1 inline-block text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 border border-primary/20 rounded-full px-2.5 py-0.5">{user.preferences.role}</span>
+          )}
+        </div>
+        <p className="text-slate-500 text-sm font-medium">Updated daily · {briefs.length} briefs</p>
       </div>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-[1.1fr_1fr]">
-        <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-2xl px-5 py-4 shadow-sm h-full">
-          <div className="flex h-full flex-col">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1.5 font-mono">Personalization</p>
-            <div className="flex flex-1 items-end justify-between gap-4">
-              <div>
-              <p className="text-sm font-semibold text-slate-300">Role: {user.preferences.role || 'Not set'}</p>
-              <p className="text-sm font-semibold text-slate-300">Focus area: {user.preferences.mainConcern || 'Not set'}</p>
-              </div>
-              <Button
-                variant="primary"
-                className="rounded-full px-6 py-2.5 font-bold"
-                onClick={onOpenPersonalization}
-              >
-                Refresh Signals
-              </Button>
-            </div>
+      {/* Command bar */}
+      <div className="mb-7 grid gap-3 sm:grid-cols-2">
+        <div className="flex items-center justify-between bg-surface-mid border border-surface-border rounded-xl px-4 py-3.5">
+          <div>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-600 mb-0.5">Focus</p>
+            <p className="text-sm font-semibold text-slate-300 truncate max-w-[180px]">{user.preferences.mainConcern || 'Not personalised'}</p>
           </div>
+          <Button variant="primary" className="rounded-full px-5 py-2 text-xs" onClick={onOpenPersonalization}>
+            <Icon name="refresh" className="text-sm" /> Refresh
+          </Button>
         </div>
-        <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-2xl px-5 py-4 shadow-sm h-full">
-          <div className="flex h-full flex-col">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 font-mono">Token Balance</p>
-            <div className="flex flex-1 items-end justify-between gap-3">
-              <p className="text-3xl leading-none font-display font-black text-white">{tokenBalance}</p>
-              <Button
-                variant="secondary"
-                className="rounded-full px-6 py-2.5 font-bold"
-                onClick={onOpenBilling}
-              >
-                Buy Tokens
-              </Button>
-            </div>
+        <div className="flex items-center justify-between bg-surface-mid border border-surface-border rounded-xl px-4 py-3.5">
+          <div>
+            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-600 mb-0.5">Token Balance</p>
+            <p className="text-2xl font-display font-black text-white leading-none">{tokenBalance}</p>
           </div>
+          <Button variant="secondary" className="rounded-full px-5 py-2 text-xs" onClick={onOpenBilling}>
+            Buy Tokens
+          </Button>
         </div>
       </div>
 
@@ -786,54 +848,66 @@ const DashboardView = ({
           </div>
         </div>
       ) : (
-        <div className="grid gap-6 sm:gap-8 lg:gap-10">
-          {sortedBriefs.map((brief, idx) => (
-            <div key={brief.id} className="bg-surface-glass backdrop-blur-2xl border border-surface-border rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-lg hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 group relative animate-fade-up" style={{ animationDelay: `${idx * 0.1}s` }}>
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-5 sm:mb-6">
-                <div className="flex items-center gap-3 sm:gap-4 flex-wrap font-mono">
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{brief.source}</span>
-                  <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{brief.date}</span>
+        <div className="grid gap-5 sm:gap-7">
+          {sortedBriefs.map((brief, idx) => {
+            const cat = (brief.category || '').toLowerCase();
+            const catClass = cat.includes('product') || cat.includes('tech') ? 'cat-product'
+              : cat.includes('market') || cat.includes('growth') || cat.includes('strategy') ? 'cat-market'
+              : cat.includes('risk') || cat.includes('security') || cat.includes('compliance') ? 'cat-risk'
+              : cat.includes('ops') || cat.includes('efficiency') || cat.includes('productivity') ? 'cat-ops'
+              : 'cat-default';
+            const isHighRelevance = (brief.matchScore || 0) > 75;
+            return (
+              <div key={brief.id} className={`${catClass} bg-surface-mid border border-surface-border rounded-2xl p-5 sm:p-7 shadow-md hover:shadow-xl hover:-translate-y-0.5 hover:border-surface-border-bright transition-all duration-200 group relative animate-fade-up`} style={{ animationDelay: `${idx * 0.07}s` }}>
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isHighRelevance && <span className="relevance-dot"></span>}
+                    <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{brief.source}</span>
+                    <span className="text-slate-700">·</span>
+                    <span className="text-[10px] font-mono font-bold text-slate-600 uppercase tracking-widest">{brief.date}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {brief.matchScore && brief.matchScore > 65 && (
+                      <span className="bg-primary/15 text-blue-400 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border border-primary/20">
+                        {brief.matchScore}% match
+                      </span>
+                    )}
+                    <span className="text-[10px] font-bold text-slate-500 uppercase px-2.5 py-1 rounded-full border border-surface-border bg-background-dark/40">{brief.category}</span>
+                  </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  {brief.matchScore && brief.matchScore > 65 && (
-                    <span className="bg-primary/20 text-blue-400 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-primary/30 flex items-center gap-1 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                      <Icon name="verified" className="text-sm" /> {brief.matchScore}% Relevance
-                    </span>
-                  )}
-                  <span className="bg-background-dark/50 text-slate-400 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-surface-border">{brief.category}</span>
+
+                {/* Headline */}
+                <h3 className="text-xl sm:text-2xl font-display font-extrabold text-white mb-3 group-hover:text-accent transition-colors leading-snug">{brief.headline}</h3>
+                <p className="text-slate-400 text-sm sm:text-base leading-relaxed mb-5 line-clamp-2">{brief.summary}</p>
+
+                {/* Insights row */}
+                <div className="grid sm:grid-cols-2 gap-3 mb-5">
+                  <div className="p-3.5 rounded-xl bg-background-dark/50 border border-surface-border/60">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600 mb-1.5">Why it matters</p>
+                    <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">{brief.whyItMatters}</p>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-primary mb-1.5">Leader takeaway</p>
+                    <p className="text-xs text-slate-200 font-semibold leading-relaxed line-clamp-3">{brief.leaderTakeaway}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-surface-border/60">
+                  {user.preferences.hasPersonalized && brief.matchBreakdown ? (
+                    <div className="flex gap-2 text-[9px] font-mono font-bold uppercase text-slate-600">
+                      <span>Role {brief.matchBreakdown.role}%</span>
+                      <span>·</span>
+                      <span>Focus {brief.matchBreakdown.focus}%</span>
+                    </div>
+                  ) : <div />}
+                  <button onClick={() => onOpenBrief(brief)} className="text-xs font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+                    Full brief <Icon name="arrow_forward" className="text-sm" />
+                  </button>
                 </div>
               </div>
-              {user.preferences.hasPersonalized && brief.matchBreakdown && (
-                <div className="mb-4 sm:mb-5 flex gap-2 flex-wrap text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 font-mono">
-                  <span className="px-2 py-1 rounded-full bg-background-dark/50 border border-surface-border">Role {brief.matchBreakdown.role}%</span>
-                  <span className="px-2 py-1 rounded-full bg-background-dark/50 border border-surface-border">Focus {brief.matchBreakdown.focus}%</span>
-                </div>
-              )}
-
-              <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white mb-3 sm:mb-4 group-hover:text-primary transition-colors leading-tight">{brief.headline}</h3>
-              <p className="text-slate-400 text-base sm:text-lg leading-relaxed mb-6 sm:mb-10 line-clamp-3 sm:line-clamp-2">{brief.summary}</p>
-
-              <div className="grid md:grid-cols-2 gap-8 mb-10">
-                <div className="space-y-3 p-4 rounded-xl bg-background-dark/30 border border-surface-border/50">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-                    <Icon name="visibility" className="text-base" /> Why this matters
-                  </h4>
-                  <p className="text-sm text-slate-300 leading-relaxed">{brief.whyItMatters}</p>
-                </div>
-                <div className="space-y-3 p-4 rounded-xl bg-primary/5 border border-primary/20 shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                    <Icon name="campaign" className="text-base" /> Leader takeaway
-                  </h4>
-                  <p className="text-sm text-slate-200 font-bold leading-relaxed">{brief.leaderTakeaway}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end pt-6 sm:pt-8 border-t border-surface-border">
-                <Button onClick={() => onOpenBrief(brief)} variant="secondary" className="w-full sm:w-auto px-8 sm:px-10 rounded-full font-bold hover:bg-white hover:text-slate-900 transition-colors">View Briefing Details</Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )
       }
@@ -846,81 +920,99 @@ const DashboardView = ({
 const DetailView = ({ brief, onBack }: {
   brief: Brief, onBack: () => void
 }) => {
+  const cat = (brief.category || '').toLowerCase();
+  const catClass = cat.includes('product') || cat.includes('tech') ? 'cat-product'
+    : cat.includes('market') || cat.includes('strategy') ? 'cat-market'
+    : cat.includes('risk') || cat.includes('security') ? 'cat-risk'
+    : 'cat-default';
+
   return (
-    <div className="max-w-4xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12 animate-fade-up">
-      <button onClick={onBack} className="flex items-center gap-3 text-slate-500 font-bold mb-8 sm:mb-12 lg:mb-16 hover:text-white transition-colors uppercase text-[10px] tracking-[0.2em]">
-        <Icon name="west" className="text-lg" /> Back to Dashboard
+    <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 animate-fade-up">
+      <button onClick={onBack} className="flex items-center gap-2 text-slate-500 font-semibold mb-8 hover:text-white transition-colors text-xs uppercase tracking-[0.15em]">
+        <Icon name="west" className="text-base" /> Back to Dashboard
       </button>
 
-      <div className="bg-surface-glass backdrop-blur-2xl border border-surface-border rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-16 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
+      <div className={`${catClass} bg-surface-mid border border-surface-border rounded-2xl sm:rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden`}>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.07),transparent_70%)] pointer-events-none"></div>
 
-        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 flex-wrap font-mono">
+        {/* Meta */}
+        <div className="flex items-center gap-2.5 mb-6 flex-wrap">
           {brief.matchScore && brief.matchScore > 65 && (
-            <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-              <Icon name="verified" className="text-sm" /> Target Match
+            <span className="px-2.5 py-1 rounded-full bg-primary/15 border border-primary/25 text-blue-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Icon name="verified" className="text-xs" /> {brief.matchScore}% match
             </span>
           )}
-          <span className="px-3 py-1 rounded-full bg-background-dark/50 border border-surface-border text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">{brief.category}</span>
-          <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{brief.source} • {brief.date}</span>
+          <span className="px-2.5 py-1 rounded-full bg-background-dark/60 border border-surface-border text-slate-400 text-[10px] font-bold uppercase tracking-wider">{brief.category}</span>
+          <span className="text-slate-600 text-[10px] font-mono">{brief.source} · {brief.date}</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-white leading-[1.1] mb-8 sm:mb-12 lg:mb-16 tracking-tighter">{brief.headline}</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-white leading-tight mb-8 tracking-tight">{brief.headline}</h1>
 
-        <div className="space-y-10 sm:space-y-14 lg:space-y-20 relative z-10">
+        <div className="space-y-8 relative z-10">
+          {/* What happened */}
           <section>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-background-dark/50 border border-surface-border flex items-center justify-center text-slate-400">
-                <Icon name="newspaper" className="text-xl" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-background-dark/70 border border-surface-border flex items-center justify-center text-slate-500">
+                <Icon name="newspaper" className="text-sm" />
               </div>
-              <h2 className="text-2xl font-display font-black tracking-tight text-white">What Happened</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500">What Happened</h2>
             </div>
-            <p className="text-lg sm:text-xl text-slate-300 leading-[1.7] font-medium">{brief.whatHappened}</p>
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed">{brief.whatHappened}</p>
           </section>
 
-          <section className="bg-gradient-to-br from-slate-900 to-background-dark border border-surface-border text-white p-6 sm:p-8 lg:p-12 rounded-3xl sm:rounded-[2rem] shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Icon name="insights" className="text-[120px]" />
-            </div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.15),transparent_70%)]"></div>
-            <div className="flex items-center gap-4 mb-8 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                <Icon name="auto_graph" className="text-xl" />
-              </div>
-              <h2 className="text-2xl font-display font-black tracking-tight text-white">Executive Significance</h2>
-            </div>
-            <p className="text-xl sm:text-2xl text-slate-200 leading-[1.6] font-semibold italic border-l-4 border-primary/50 pl-5 sm:pl-8 relative z-10">{brief.whyItMatters}</p>
+          {/* Executive significance — pull quote style */}
+          <section className="border-l-4 border-gold/60 bg-gold/5 rounded-r-2xl p-5 sm:p-7">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gold/80 mb-3">Executive Significance</p>
+            <p className="text-base sm:text-xl text-slate-100 font-semibold leading-relaxed italic">{brief.whyItMatters}</p>
           </section>
 
+          {/* Leader takeaway */}
+          <section className="bg-primary/5 border border-primary/20 rounded-2xl p-5 sm:p-7">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">Leader Takeaway</p>
+            <p className="text-base sm:text-lg text-slate-200 font-bold leading-relaxed">{brief.leaderTakeaway}</p>
+          </section>
+
+          {/* Strategic considerations */}
           <section>
-            <div className="flex items-center gap-4 mb-10">
-              <div className="w-10 h-10 rounded-xl bg-background-dark/50 border border-surface-border flex items-center justify-center text-slate-400">
-                <Icon name="fact_check" className="text-xl" />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-7 h-7 rounded-lg bg-background-dark/70 border border-surface-border flex items-center justify-center text-slate-500">
+                <Icon name="fact_check" className="text-sm" />
               </div>
-              <h2 className="text-2xl font-display font-black tracking-tight text-white">Strategic Considerations</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500">Strategic Considerations</h2>
             </div>
-            <ul className="grid gap-4">
-              {brief.whatToConsiderNext.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl bg-background-dark/30 border border-surface-border hover:border-primary/30 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-surface-glass border border-surface-border flex items-center justify-center text-slate-400 font-mono font-black text-sm shrink-0 group-hover:bg-primary/20 group-hover:text-primary group-hover:border-primary/30 transition-all">
-                    {idx + 1}
-                  </div>
-                  <span className="font-bold text-slate-300 text-base sm:text-lg leading-relaxed">{item}</span>
+            <ul className="space-y-3">
+              {brief.whatToConsiderNext.map((item, i) => (
+                <li key={i} className="flex items-start gap-4 p-4 rounded-xl bg-background-dark/40 border border-surface-border hover:border-surface-border-bright transition-colors">
+                  <span className="w-7 h-7 rounded-full bg-surface-mid border border-surface-border flex items-center justify-center text-xs font-mono font-bold text-slate-400 shrink-0">{i + 1}</span>
+                  <span className="text-sm text-slate-300 font-medium leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
           </section>
+
+          {/* Sources */}
+          {brief.supportingSources && brief.supportingSources.length > 0 && (
+            <section>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-3">Sources</p>
+              <div className="flex flex-wrap gap-2">
+                {brief.supportingSources.map((s: any, i: number) => (
+                  <a key={i} href={s.url || '#'} target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-semibold text-slate-500 hover:text-white border border-surface-border hover:border-surface-border-bright px-3 py-1.5 rounded-full transition-colors">
+                    {s.source}
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
-        <div className="mt-12 sm:mt-16 lg:mt-24 pt-8 sm:pt-12 border-t border-surface-border flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center relative z-10">
-          <div className="flex gap-4">
-            <Button variant="secondary" className="rounded-full px-8 hover:bg-white hover:text-slate-900 transition-colors">
-              <Icon name="ios_share" /> Share Intelligence
-            </Button>
-          </div>
-          <button className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors">
-            Download PDF Brief
+        <div className="mt-10 pt-6 border-t border-surface-border flex justify-between items-center">
+          <button onClick={onBack} className="text-xs font-bold text-slate-500 hover:text-white transition-colors flex items-center gap-1.5">
+            <Icon name="west" className="text-sm" /> All signals
           </button>
+          <Button variant="secondary" className="rounded-full px-6 text-xs">
+            <Icon name="ios_share" className="text-sm" /> Share
+          </Button>
         </div>
       </div>
     </div>
