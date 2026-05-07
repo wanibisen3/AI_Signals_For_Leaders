@@ -8,12 +8,12 @@ import { User, UserPreferences, ViewState, Brief, Role, DecisionArea, DashboardS
 const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button', disabled = false }: {
   children?: React.ReactNode, onClick?: () => void, variant?: 'primary' | 'secondary' | 'ghost' | 'danger', className?: string, type?: 'button' | 'submit', disabled?: boolean
 }) => {
-  const base = "px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap";
+  const base = "px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap font-display tracking-wide";
   const variants = {
-    primary: "bg-gradient-to-r from-slate-900 to-slate-700 text-white hover:from-slate-800 hover:to-slate-700 shadow-sm hover:shadow-md",
-    secondary: "bg-white/90 backdrop-blur border border-slate-200 text-slate-700 hover:bg-white shadow-sm",
-    ghost: "bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/60",
-    danger: "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 shadow-sm"
+    primary: "bg-primary text-white hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] border border-blue-500/50",
+    secondary: "bg-surface-glass backdrop-blur-md border border-surface-border text-slate-200 hover:bg-slate-800/80 shadow-sm",
+    ghost: "bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/50",
+    danger: "bg-red-900/20 text-red-400 border border-red-900/50 hover:bg-red-900/40 shadow-sm"
   };
   return (
     <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -52,98 +52,87 @@ const inferDecisionAreasFromConcern = (value: string): DecisionArea[] => {
 // --- View: Marketing Home ---
 
 const MarketingHome = ({ onAuth, onNavigate }: { onAuth: (view: 'signin' | 'signup') => void, onNavigate: (view: 'about' | 'privacy' | 'terms' | 'contact') => void }) => (
-  <div className="bg-gradient-to-b from-white via-slate-50/40 to-white min-h-screen selection:bg-primary selection:text-white">
-    <nav className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:h-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shrink-0">
+  <div className="bg-background-dark min-h-screen relative overflow-hidden font-sans">
+    <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.15),rgba(255,255,255,0))]"></div>
+    <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[800px] h-[800px] opacity-20 bg-primary/20 rounded-full blur-[120px] animate-pulse-slow pointer-events-none"></div>
+
+    <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between z-10 relative">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]">
           <Icon name="analytics" className="text-2xl" />
         </div>
-        <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-none">AI Signals for Leaders</span>
+        <span className="text-xl font-display font-bold tracking-tight text-white">AI Signals</span>
       </div>
-      <div className="w-full sm:w-auto flex items-center sm:justify-end gap-3 shrink-0">
-        <Button onClick={() => onAuth('signin')} className="w-full sm:w-auto rounded-full px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base">
+      <div>
+        <Button onClick={() => onAuth('signin')} variant="secondary" className="rounded-full px-6">
           <Icon name="login" className="text-base" /> Access Portal
         </Button>
       </div>
     </nav>
 
-    <header className="max-w-5xl mx-auto px-8 py-24 md:py-32 text-center relative">
-      <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
-        <div className="w-[34rem] h-[34rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.10),transparent_65%)]"></div>
-      </div>
-      <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-[0.2em] mb-10">
+    <header className="max-w-5xl mx-auto px-6 py-32 text-center relative z-10 animate-fade-up">
+      <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold uppercase tracking-[0.2em] mb-10 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
         The Strategic Advantage
       </div>
-      <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 tracking-tight leading-[1.05]">
-        AI signals that matter for <br className="hidden md:block" /><span className="text-slate-400">product and business leaders</span>
+      <h1 className="text-5xl md:text-7xl font-display font-extrabold text-white mb-8 tracking-tight leading-[1.1]">
+        AI signals that matter for <br className="hidden md:block" />
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">business leaders</span>
       </h1>
-      <p className="text-lg sm:text-xl md:text-2xl text-slate-500 font-medium mb-14 max-w-2xl mx-auto leading-relaxed">
+      <p className="text-xl text-slate-400 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
         We filter the noise of daily developments into structured decision briefs for the C-suite.
       </p>
-      <div className="flex flex-col sm:flex-row justify-center gap-4">
-        <Button onClick={() => onAuth('signup')} className="px-12 py-5 text-lg rounded-full">Get Started</Button>
+      <div className="flex justify-center gap-4">
+        <Button onClick={() => onAuth('signup')} variant="primary" className="px-10 py-4 text-lg rounded-full">
+          Get Started
+        </Button>
       </div>
     </header>
 
-    <section className="bg-gradient-to-b from-slate-50 to-white py-24 md:py-32 border-y border-slate-100">
-      <div className="max-w-6xl mx-auto px-8">
-        <div className="text-center mb-20">
-          <h2 className="text-3xl font-bold text-slate-900">Decisions, not news.</h2>
-          <p className="text-slate-500 mt-4 text-lg">A focused perspective on the exponential curve of AI.</p>
+    <section className="relative z-10 py-24 border-t border-surface-border bg-surface-dark/50 backdrop-blur-3xl">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-20 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+          <h2 className="text-3xl font-display font-bold text-white">Decisions, not news.</h2>
+          <p className="text-slate-400 mt-4 text-lg">A focused perspective on the exponential curve of AI.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-16">
-          <div className="space-y-6 p-7 rounded-2xl bg-white border border-slate-100 shadow-sm">
-            <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="space-y-6 p-8 rounded-3xl bg-surface-glass backdrop-blur-xl border border-surface-border shadow-lg hover:-translate-y-1 transition-transform duration-300 animate-fade-up">
+            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
               <Icon name="filter_list" className="text-2xl" />
             </div>
-            <h3 className="text-xl font-bold">Filters AI Noise</h3>
-            <p className="text-slate-600 leading-relaxed text-sm">We scan thousands of updates and research papers daily, distilling only the 1% that actually impacts your vertical.</p>
+            <h3 className="text-xl font-display font-bold text-white">Filters AI Noise</h3>
+            <p className="text-slate-400 leading-relaxed text-sm">We scan thousands of updates and research papers daily, distilling only the 1% that actually impacts your vertical.</p>
           </div>
-          <div className="space-y-6 p-7 rounded-2xl bg-white border border-slate-100 shadow-sm">
-            <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
+          <div className="space-y-6 p-8 rounded-3xl bg-surface-glass backdrop-blur-xl border border-surface-border shadow-lg hover:-translate-y-1 transition-transform duration-300 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
               <Icon name="lightbulb" className="text-2xl" />
             </div>
-            <h3 className="text-xl font-bold">Explains why it matters</h3>
-            <p className="text-slate-600 leading-relaxed text-sm">Beyond the headline: We provide contextual analysis on market shifts, competitor moves, and technological breakthroughs.</p>
+            <h3 className="text-xl font-display font-bold text-white">Explains why it matters</h3>
+            <p className="text-slate-400 leading-relaxed text-sm">Beyond the headline: We provide contextual analysis on market shifts, competitor moves, and technological breakthroughs.</p>
           </div>
-          <div className="space-y-6 p-7 rounded-2xl bg-white border border-slate-100 shadow-sm">
-            <div className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-50 rounded-xl shadow-sm flex items-center justify-center text-slate-900 border border-slate-100">
+          <div className="space-y-6 p-8 rounded-3xl bg-surface-glass backdrop-blur-xl border border-surface-border shadow-lg hover:-translate-y-1 transition-transform duration-300 animate-fade-up" style={{ animationDelay: '0.3s' }}>
+            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
               <Icon name="track_changes" className="text-2xl" />
             </div>
-            <h3 className="text-xl font-bold">What to consider next</h3>
-            <p className="text-slate-600 leading-relaxed text-sm">Specific, actionable considerations for your roadmap and strategy. We provide the "so what" for every signal.</p>
+            <h3 className="text-xl font-display font-bold text-white">What to consider next</h3>
+            <p className="text-slate-400 leading-relaxed text-sm">Specific, actionable considerations for your roadmap and strategy. We provide the "so what" for every signal.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section className="py-32">
-      <div className="max-w-4xl mx-auto px-8 text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-10 sm:mb-16">Who this is for</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-          {['Product leaders', 'Business leaders', 'Founders'].map(role => (
-            <div key={role} className="p-5 sm:p-8 border border-slate-100 rounded-2xl bg-white shadow-sm flex items-center justify-center gap-3 sm:flex-col sm:gap-0">
-              <div className="w-2.5 h-2.5 bg-slate-900 rounded-full sm:mb-4 shrink-0"></div>
-              <h4 className="font-bold text-slate-900 text-xl sm:text-2xl leading-none">{role}</h4>
-            </div>
-          ))}
+    <footer className="bg-background-dark text-slate-500 py-12 border-t border-surface-border">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex gap-8">
+          <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors font-medium">About</button>
+          <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors font-medium">Privacy</button>
+          <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors font-medium">Terms</button>
+          <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors font-medium">Contact</button>
         </div>
-      </div>
-    </section>
-
-    <footer className="bg-slate-900 text-slate-400 py-20">
-      <div className="max-w-7xl mx-auto px-8 flex flex-col md:row justify-between items-center gap-12 border-t border-slate-800 pt-12">
-        <div className="flex gap-12">
-          <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors">About</button>
-          <button onClick={() => onNavigate('privacy')} className="hover:text-white transition-colors">Privacy</button>
-          <button onClick={() => onNavigate('terms')} className="hover:text-white transition-colors">Terms</button>
-          <button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors">Contact</button>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-white rounded flex items-center justify-center text-slate-900">
-            <Icon name="analytics" className="text-sm" />
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 bg-surface-border rounded flex items-center justify-center text-white">
+            <Icon name="analytics" className="text-xs" />
           </div>
-          <p className="text-sm">© 2026 AI Signals for Business Leaders. All rights reserved.</p>
+          <p className="text-sm font-medium">© 2026 AI Signals for Business Leaders.</p>
         </div>
       </div>
     </footer>
@@ -373,31 +362,32 @@ const AuthView = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-      <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-3xl shadow-xl p-12 border border-slate-200">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background-dark relative overflow-hidden font-sans">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.15),rgba(255,255,255,0))]"></div>
+      <div className="w-full max-w-md bg-surface-glass backdrop-blur-2xl rounded-3xl shadow-2xl p-12 border border-surface-border animate-fade-up">
         <div className="text-center mb-10">
-          <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg">
+          <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6 shadow-[0_0_20px_rgba(59,130,246,0.2)] border border-primary/30">
             <Icon name="analytics" className="text-3xl" />
           </div>
-          <h2 className="text-3xl font-extrabold text-slate-900">{mode === 'signin' ? 'Executive Sign In' : 'Create Account'}</h2>
-          <p className="text-slate-500 text-sm mt-3 leading-relaxed">
+          <h2 className="text-3xl font-display font-extrabold text-white">{mode === 'signin' ? 'Executive Sign In' : 'Create Account'}</h2>
+          <p className="text-slate-400 text-sm mt-3 leading-relaxed">
             {mode === 'signin'
               ? 'Access your private AI intelligence briefing.'
               : 'Join a network of leaders making informed AI decisions.'}
           </p>
         </div>
-        <div className="mb-6 p-1 rounded-xl bg-slate-100 border border-slate-200 grid grid-cols-2 gap-1">
+        <div className="mb-6 p-1 rounded-xl bg-background-dark/50 border border-surface-border grid grid-cols-2 gap-1">
           <button
             type="button"
             onClick={() => { onClearExternalError?.(); onSwitchMode('signin'); }}
-            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signin' ? 'bg-surface-border text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Sign In
           </button>
           <button
             type="button"
             onClick={() => { onClearExternalError?.(); onSwitchMode('signup'); }}
-            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-surface-border text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Create Account
           </button>
@@ -406,7 +396,7 @@ const AuthView = ({
           type="button"
           onClick={handleGoogle}
           disabled={loading}
-          className="w-full mb-6 py-3.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className="w-full mb-6 py-3.5 rounded-xl border border-surface-border bg-background-dark/30 text-sm font-bold text-slate-300 hover:bg-surface-border disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.655 32.657 29.223 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.844 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.27 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
@@ -417,45 +407,45 @@ const AuthView = ({
           Continue with Google
         </button>
         <div className="flex items-center gap-3 mb-6">
-          <div className="h-px flex-1 bg-slate-100"></div>
-          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">or</span>
-          <div className="h-px flex-1 bg-slate-100"></div>
+          <div className="h-px flex-1 bg-surface-border"></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">or</span>
+          <div className="h-px flex-1 bg-surface-border"></div>
         </div>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-1">
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Work Email</label>
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-500">Work Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all"
+              className="w-full rounded-xl bg-background-dark/50 border-surface-border text-white py-3 focus:ring-primary focus:border-primary transition-all placeholder-slate-600"
               placeholder="name@company.com"
             />
           </div>
           <div className="space-y-1">
             <div className="flex justify-between">
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Password</label>
-              {mode === 'signin' && <button type="button" className="text-xs text-slate-400 hover:text-slate-900 font-medium">Forgot password?</button>}
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500">Password</label>
+              {mode === 'signin' && <button type="button" className="text-xs text-primary hover:text-blue-400 font-medium">Forgot password?</button>}
             </div>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all"
+              className="w-full rounded-xl bg-background-dark/50 border-surface-border text-white py-3 focus:ring-primary focus:border-primary transition-all placeholder-slate-600"
               placeholder="••••••••"
             />
           </div>
           {mode === 'signup' && (
             <div className="space-y-1">
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Confirm Password</label>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500">Confirm Password</label>
               <input
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-xl border-slate-200 py-3 focus:ring-slate-900 focus:border-slate-900 transition-all"
+                className="w-full rounded-xl bg-background-dark/50 border-surface-border text-white py-3 focus:ring-primary focus:border-primary transition-all placeholder-slate-600"
                 placeholder="••••••••"
               />
             </div>
@@ -465,18 +455,18 @@ const AuthView = ({
             {loading ? 'Please wait...' : (mode === 'signin' ? 'Sign In' : 'Create Account')}
           </Button>
         </form>
-        <div className="mt-10 pt-8 border-t border-slate-100 text-center">
-          <p className="text-sm text-slate-500 mb-4">
+        <div className="mt-10 pt-8 border-t border-surface-border text-center">
+          <p className="text-sm text-slate-400 mb-4">
             {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
             <button
               type="button"
               onClick={() => { onClearExternalError?.(); onSwitchMode(mode === 'signin' ? 'signup' : 'signin'); }}
-              className="font-bold text-slate-900 hover:text-slate-700"
+              className="font-bold text-primary hover:text-blue-400"
             >
               {mode === 'signin' ? 'Create Account' : 'Sign In'}
             </button>
           </p>
-          <button onClick={() => { onClearExternalError?.(); onBack(); }} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">
+          <button onClick={() => { onClearExternalError?.(); onBack(); }} className="text-sm font-bold text-slate-500 hover:text-slate-300 transition-colors">
             Return to Homepage
           </button>
         </div>
@@ -526,22 +516,23 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-background-dark flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.15),rgba(255,255,255,0))]"></div>
+      <div className="w-full max-w-2xl animate-fade-up">
         <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Personalize your AI Signals</h2>
-          <p className="text-lg sm:text-xl text-slate-500 font-medium">To curate your intelligence briefing.</p>
+          <h2 className="text-4xl sm:text-5xl font-display font-extrabold text-white mb-4 tracking-tight">Personalize your AI Signals</h2>
+          <p className="text-lg sm:text-xl text-slate-400 font-medium">To curate your intelligence briefing.</p>
         </div>
-        <div className="space-y-8 sm:space-y-10 bg-white p-6 sm:p-10 md:p-12 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="space-y-8 sm:space-y-10 bg-surface-glass backdrop-blur-2xl p-6 sm:p-10 md:p-12 rounded-3xl border border-surface-border shadow-2xl">
 
           <div className="space-y-4">
-            <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400">1. What is your role?</label>
+            <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-500">1. What is your role?</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {['Product Leader', 'Business Leader', 'Founder', 'Other'].map((r) => (
                 <button
                   key={r}
                   onClick={() => setRole(r as Role)}
-                  className={`py-4 px-3 rounded-xl border text-base sm:text-sm font-bold transition-all ${role === r ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-500 hover:border-slate-900'}`}
+                  className={`py-4 px-3 rounded-xl border text-base sm:text-sm font-bold transition-all ${role === r ? 'bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-background-dark/30 border-surface-border text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
                 >
                   {r}
                 </button>
@@ -550,7 +541,7 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
           </div>
 
           <div className="space-y-4">
-            <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-400">2. Primary Strategic Focus</label>
+            <label className="text-xs sm:text-sm font-bold uppercase tracking-widest text-slate-500">2. Primary Strategic Focus</label>
             <div className="flex flex-col gap-3">
               {FOCUS_OPTIONS.map((opt) => {
                 const isSelected = isCustom ? opt === OTHER_FOCUS_OPTION : concern === opt;
@@ -558,10 +549,10 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
                   <button
                     key={opt}
                     onClick={() => handleFocusSelect(opt)}
-                    className={`w-full text-left px-5 sm:px-6 py-4 rounded-xl border text-base sm:text-lg font-bold transition-all flex justify-between items-center ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-slate-600 hover:border-slate-400'}`}
+                    className={`w-full text-left px-5 sm:px-6 py-4 rounded-xl border text-base sm:text-lg font-bold transition-all flex justify-between items-center ${isSelected ? 'bg-primary/20 border-primary/50 text-white shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-background-dark/30 border-surface-border text-slate-400 hover:border-slate-600 hover:text-slate-200'}`}
                   >
                     {opt}
-                    {isSelected && <Icon name="check" />}
+                    {isSelected && <Icon name="check" className="text-primary" />}
                   </button>
                 );
               })}
@@ -571,26 +562,26 @@ const Personalization = ({ onComplete }: { onComplete: (prefs: UserPreferences) 
                   value={customConcern}
                   onChange={handleCustomChange}
                   placeholder="e.g. Navigating AI regulation in EU..."
-                  className="w-full rounded-xl border-slate-200 py-4 px-6 text-base focus:ring-slate-900 focus:border-slate-900 animate-in fade-in slide-in-from-top-2"
+                  className="w-full rounded-xl bg-background-dark/50 border-surface-border text-white py-4 px-6 text-base focus:ring-primary focus:border-primary transition-all placeholder-slate-600 animate-in fade-in slide-in-from-top-2"
                   autoFocus
                 />
               )}
             </div>
           </div>
 
-          <label className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">
+          <label className="flex items-center gap-3 rounded-xl border border-surface-border bg-background-dark/30 px-4 py-3 text-sm font-semibold text-slate-300 cursor-pointer hover:bg-background-dark/50 transition-colors">
             <input
               type="checkbox"
               checked={generateBriefs}
               onChange={(e) => setGenerateBriefs(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+              className="h-4 w-4 rounded border-slate-600 bg-background-dark text-primary focus:ring-primary focus:ring-offset-background-dark"
             />
             Personalize and generate briefs now (costs 1 token)
           </label>
 
-          <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-            <button onClick={handleSkip} className="text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors">Skip</button>
-            <Button onClick={handleContinue} className="px-12 py-4 rounded-full" disabled={!role || !concern}>
+          <div className="flex items-center justify-between pt-8 border-t border-surface-border">
+            <button onClick={handleSkip} className="text-sm font-bold text-slate-500 hover:text-slate-300 transition-colors">Skip</button>
+            <Button onClick={handleContinue} variant="primary" className="px-12 py-4 rounded-full" disabled={!role || !concern}>
               {generateBriefs ? 'Personalize and Refresh Signals' : 'Save Personalization'}
             </Button>
           </div>
@@ -613,29 +604,29 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
   ];
 
   return (
-    <div className="flex min-h-screen md:h-screen flex-col md:flex-row overflow-hidden bg-white">
+    <div className="flex min-h-screen md:h-screen flex-col md:flex-row overflow-hidden bg-background-dark font-sans text-slate-300 selection:bg-primary/30 selection:text-white">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-72 border-r border-slate-100 flex-col shrink-0 bg-white">
+      <aside className="hidden md:flex w-72 border-r border-surface-border flex-col shrink-0 bg-background-dark/80 backdrop-blur-3xl z-20">
         <div className="p-10 mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-sm">
+          <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center text-primary shadow-[0_0_15px_rgba(59,130,246,0.2)] border border-primary/30">
             <Icon name="analytics" className="text-2xl" />
           </div>
-          <span className="text-2xl font-black tracking-tighter text-slate-900">AI Signals for Leaders</span>
+          <span className="text-2xl font-display font-black tracking-tight text-white">AI Signals</span>
         </div>
         <nav className="flex-1 px-6 space-y-2">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => { setView(item.id as ViewState); setProfileOpen(false); }}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold transition-all ${activeView === item.id ? 'bg-slate-50 text-slate-900' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold transition-all ${activeView === item.id ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm' : 'text-slate-500 hover:bg-surface-glass hover:text-slate-300'}`}
             >
-              <Icon name={item.icon} className={`text-xl ${activeView === item.id ? 'text-slate-900' : ''}`} />
+              <Icon name={item.icon} className={`text-xl ${activeView === item.id ? 'text-primary' : ''}`} />
               {item.label}
             </button>
           ))}
         </nav>
-        <div className="p-8 border-t border-slate-50">
-          <button onClick={onSignOut} className="w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all">
+        <div className="p-8 border-t border-surface-border">
+          <button onClick={onSignOut} className="w-full flex items-center gap-4 px-5 py-4 rounded-xl text-sm font-bold text-slate-500 hover:bg-red-900/20 hover:text-red-400 transition-all">
             <Icon name="logout" className="text-xl" />
             Sign Out
           </button>
@@ -643,12 +634,13 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50/30">
-        <header className="h-16 md:h-24 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 md:px-12 shrink-0 z-10">
-          <div className="hidden lg:block text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
+      <div className="flex-1 flex flex-col min-w-0 bg-background-dark relative">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.08),rgba(255,255,255,0))]"></div>
+        <header className="h-16 md:h-24 border-b border-surface-border bg-surface-dark/40 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 md:px-12 shrink-0 z-10">
+          <div className="hidden lg:block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
             Executive Intelligence Portal
           </div>
-          <div className="lg:hidden text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+          <div className="lg:hidden text-xs font-black text-slate-500 uppercase tracking-[0.2em]">
             AI Signals
           </div>
           <div className="relative">
@@ -657,32 +649,32 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
               onClick={() => setProfileOpen(!profileOpen)}
             >
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-900">{user.email.split('@')[0]}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{user.preferences.role || 'Executive'}</p>
+                <p className="text-sm font-bold text-slate-200">{user.email.split('@')[0]}</p>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-wider">{user.preferences.role || 'Executive'}</p>
               </div>
-              <div className="w-9 h-9 md:w-11 md:h-11 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
+              <div className="w-9 h-9 md:w-11 md:h-11 bg-surface-glass rounded-full flex items-center justify-center text-slate-400 border border-surface-border shadow-sm">
                 <Icon name="person" className="text-xl" />
               </div>
             </div>
 
             {profileOpen && (
-              <div className="absolute right-0 mt-3 w-56 bg-white border border-slate-100 shadow-xl rounded-2xl p-2 z-20">
-                <button onClick={() => { setView('settings'); setProfileOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl flex items-center gap-3">
+              <div className="absolute right-0 mt-3 w-56 bg-surface-glass backdrop-blur-xl border border-surface-border shadow-2xl rounded-2xl p-2 z-50">
+                <button onClick={() => { setView('settings'); setProfileOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold text-slate-300 hover:bg-background-dark/50 rounded-xl flex items-center gap-3 transition-colors">
                   <Icon name="settings" className="text-lg" /> Edit Preferences
                 </button>
-                <button onClick={onSignOut} className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl flex items-center gap-3">
+                <button onClick={onSignOut} className="w-full text-left px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-900/20 rounded-xl flex items-center gap-3 transition-colors mt-1">
                   <Icon name="logout" className="text-lg" /> Sign Out
                 </button>
               </div>
             )}
           </div>
         </header>
-        <div className="md:hidden border-b border-slate-100 bg-white px-3 py-2 flex items-center gap-2">
+        <div className="md:hidden border-b border-surface-border bg-surface-dark/80 backdrop-blur-md px-3 py-2 flex items-center gap-2 z-10">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => { setView(item.id as ViewState); setProfileOpen(false); }}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeView === item.id ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-500'}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeView === item.id ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-transparent text-slate-500'}`}
             >
               <Icon name={item.icon} className="text-base" />
               {item.label}
@@ -690,7 +682,7 @@ const AppLayout = ({ children, activeView, setView, onSignOut, user }: {
           ))}
         </div>
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 overflow-y-auto custom-scrollbar relative z-0">
           {children}
         </main>
       </div>
@@ -732,25 +724,25 @@ const DashboardView = ({
   });
 
   return (
-    <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12 relative">
-      <div className="absolute -top-20 right-0 w-72 h-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(30,64,175,0.12),transparent_65%)] pointer-events-none"></div>
-      <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-slate-900 pl-4 sm:pl-6 lg:pl-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+    <div className="max-w-5xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12 relative animate-fade-up">
+      <div className="absolute -top-20 right-0 w-72 h-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_65%)] pointer-events-none"></div>
+      <div className="mb-8 sm:mb-12 lg:mb-16 border-l-4 border-primary pl-4 sm:pl-6 lg:pl-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-white tracking-tight leading-tight">
           {user.preferences.hasPersonalized ? `AI Signals for ${user.email.split('@')[0]}` : 'Top AI Developments'}
         </h1>
-        <p className="text-slate-500 mt-3 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
+        <p className="text-slate-400 mt-3 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
           Curated briefings for high-level decision makers. <span className="text-slate-300">Updated daily.</span>
         </p>
       </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-[1.1fr_1fr]">
-        <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm h-full">
+        <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-2xl px-5 py-4 shadow-sm h-full">
           <div className="flex h-full flex-col">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1.5">Personalization</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1.5 font-mono">Personalization</p>
             <div className="flex flex-1 items-end justify-between gap-4">
               <div>
-              <p className="text-sm font-semibold text-slate-700">Role: {user.preferences.role || 'Not set'}</p>
-              <p className="text-sm font-semibold text-slate-700">Focus area: {user.preferences.mainConcern || 'Not set'}</p>
+              <p className="text-sm font-semibold text-slate-300">Role: {user.preferences.role || 'Not set'}</p>
+              <p className="text-sm font-semibold text-slate-300">Focus area: {user.preferences.mainConcern || 'Not set'}</p>
               </div>
               <Button
                 variant="primary"
@@ -762,13 +754,13 @@ const DashboardView = ({
             </div>
           </div>
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm h-full">
+        <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-2xl px-5 py-4 shadow-sm h-full">
           <div className="flex h-full flex-col">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Token Balance</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2 font-mono">Token Balance</p>
             <div className="flex flex-1 items-end justify-between gap-3">
-              <p className="text-3xl leading-none font-black text-slate-900">{tokenBalance}</p>
+              <p className="text-3xl leading-none font-display font-black text-white">{tokenBalance}</p>
               <Button
-                variant="primary"
+                variant="secondary"
                 className="rounded-full px-6 py-2.5 font-bold"
                 onClick={onOpenBilling}
               >
@@ -781,64 +773,64 @@ const DashboardView = ({
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-32 space-y-4">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin"></div>
-          <p className="text-slate-500 font-bold animate-pulse">Analyzing AI signals...</p>
+          <div className="w-12 h-12 border-4 border-surface-border border-t-primary rounded-full animate-spin"></div>
+          <p className="text-slate-400 font-bold animate-pulse">Analyzing AI signals...</p>
         </div>
       ) : sortedBriefs.length === 0 ? (
-        <div className="bg-white border border-slate-100 rounded-3xl p-10 text-center shadow-sm">
-          <h3 className="text-2xl font-black text-slate-900 mb-2">No briefs yet</h3>
-          <p className="text-slate-500 mb-6">Set personalization and generate your first brief batch. It costs 1 token.</p>
+        <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-10 text-center shadow-sm">
+          <h3 className="text-2xl font-display font-black text-white mb-2">No briefs yet</h3>
+          <p className="text-slate-400 mb-6">Set personalization and generate your first brief batch. It costs 1 token.</p>
           <div className="flex justify-center gap-3">
-            <Button onClick={onOpenPersonalization}>Refresh Signals</Button>
+            <Button onClick={onOpenPersonalization} variant="primary">Refresh Signals</Button>
             <Button variant="secondary" onClick={onOpenBilling}>Buy Tokens</Button>
           </div>
         </div>
       ) : (
         <div className="grid gap-6 sm:gap-8 lg:gap-10">
-          {sortedBriefs.map(brief => (
-            <div key={brief.id} className="bg-white/95 backdrop-blur border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all group relative">
+          {sortedBriefs.map((brief, idx) => (
+            <div key={brief.id} className="bg-surface-glass backdrop-blur-2xl border border-surface-border rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-lg hover:shadow-2xl hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 group relative animate-fade-up" style={{ animationDelay: `${idx * 0.1}s` }}>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-5 sm:mb-6">
-                <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.source}</span>
-                  <span className="w-1.5 h-1.5 bg-slate-200 rounded-full"></span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{brief.date}</span>
+                <div className="flex items-center gap-3 sm:gap-4 flex-wrap font-mono">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{brief.source}</span>
+                  <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{brief.date}</span>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {brief.matchScore && brief.matchScore > 65 && (
-                    <span className="bg-blue-50 text-blue-600 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-blue-100 flex items-center gap-1">
+                    <span className="bg-primary/20 text-blue-400 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-primary/30 flex items-center gap-1 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
                       <Icon name="verified" className="text-sm" /> {brief.matchScore}% Relevance
                     </span>
                   )}
-                  <span className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-slate-100">{brief.category}</span>
+                  <span className="bg-background-dark/50 text-slate-400 text-[10px] font-black uppercase px-3 py-1 rounded-full border border-surface-border">{brief.category}</span>
                 </div>
               </div>
               {user.preferences.hasPersonalized && brief.matchBreakdown && (
-                <div className="mb-4 sm:mb-5 flex gap-2 flex-wrap text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">
-                  <span className="px-2 py-1 rounded-full bg-slate-50 border border-slate-100">Role {brief.matchBreakdown.role}%</span>
-                  <span className="px-2 py-1 rounded-full bg-slate-50 border border-slate-100">Focus {brief.matchBreakdown.focus}%</span>
+                <div className="mb-4 sm:mb-5 flex gap-2 flex-wrap text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 font-mono">
+                  <span className="px-2 py-1 rounded-full bg-background-dark/50 border border-surface-border">Role {brief.matchBreakdown.role}%</span>
+                  <span className="px-2 py-1 rounded-full bg-background-dark/50 border border-surface-border">Focus {brief.matchBreakdown.focus}%</span>
                 </div>
               )}
 
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3 sm:mb-4 group-hover:text-slate-700 transition-colors leading-tight">{brief.headline}</h3>
-              <p className="text-slate-500 text-base sm:text-lg leading-relaxed mb-6 sm:mb-10 line-clamp-3 sm:line-clamp-2">{brief.summary}</p>
+              <h3 className="text-2xl sm:text-3xl font-display font-extrabold text-white mb-3 sm:mb-4 group-hover:text-primary transition-colors leading-tight">{brief.headline}</h3>
+              <p className="text-slate-400 text-base sm:text-lg leading-relaxed mb-6 sm:mb-10 line-clamp-3 sm:line-clamp-2">{brief.summary}</p>
 
               <div className="grid md:grid-cols-2 gap-8 mb-10">
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
+                <div className="space-y-3 p-4 rounded-xl bg-background-dark/30 border border-surface-border/50">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                     <Icon name="visibility" className="text-base" /> Why this matters
                   </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">{brief.whyItMatters}</p>
+                  <p className="text-sm text-slate-300 leading-relaxed">{brief.whyItMatters}</p>
                 </div>
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 flex items-center gap-2">
+                <div className="space-y-3 p-4 rounded-xl bg-primary/5 border border-primary/20 shadow-[inset_0_0_20px_rgba(59,130,246,0.05)]">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
                     <Icon name="campaign" className="text-base" /> Leader takeaway
                   </h4>
-                  <p className="text-sm text-slate-900 font-bold leading-relaxed">{brief.leaderTakeaway}</p>
+                  <p className="text-sm text-slate-200 font-bold leading-relaxed">{brief.leaderTakeaway}</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end pt-6 sm:pt-8 border-t border-slate-50">
-                <Button onClick={() => onOpenBrief(brief)} className="w-full sm:w-auto px-8 sm:px-10 rounded-full font-bold">View Briefing Details</Button>
+              <div className="flex items-center justify-end pt-6 sm:pt-8 border-t border-surface-border">
+                <Button onClick={() => onOpenBrief(brief)} variant="secondary" className="w-full sm:w-auto px-8 sm:px-10 rounded-full font-bold hover:bg-white hover:text-slate-900 transition-colors">View Briefing Details</Button>
               </div>
             </div>
           ))}
@@ -855,75 +847,78 @@ const DetailView = ({ brief, onBack }: {
   brief: Brief, onBack: () => void
 }) => {
   return (
-    <div className="max-w-4xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12">
-      <button onClick={onBack} className="flex items-center gap-3 text-slate-400 font-bold mb-8 sm:mb-12 lg:mb-16 hover:text-slate-900 transition-colors uppercase text-[10px] tracking-[0.2em]">
+    <div className="max-w-4xl mx-auto py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-12 animate-fade-up">
+      <button onClick={onBack} className="flex items-center gap-3 text-slate-500 font-bold mb-8 sm:mb-12 lg:mb-16 hover:text-white transition-colors uppercase text-[10px] tracking-[0.2em]">
         <Icon name="west" className="text-lg" /> Back to Dashboard
       </button>
 
-      <div className="bg-white/95 backdrop-blur border border-slate-100 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-16 shadow-lg">
-        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 flex-wrap">
+      <div className="bg-surface-glass backdrop-blur-2xl border border-surface-border rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-16 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent_70%)] pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
+
+        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 flex-wrap font-mono">
           {brief.matchScore && brief.matchScore > 65 && (
-            <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
               <Icon name="verified" className="text-sm" /> Target Match
             </span>
           )}
-          <span className="px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em]">{brief.category}</span>
-          <span className="text-slate-300 text-xs font-bold uppercase tracking-widest">{brief.source} • {brief.date}</span>
+          <span className="px-3 py-1 rounded-full bg-background-dark/50 border border-surface-border text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">{brief.category}</span>
+          <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{brief.source} • {brief.date}</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.1] mb-8 sm:mb-12 lg:mb-16 tracking-tighter">{brief.headline}</h1>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-white leading-[1.1] mb-8 sm:mb-12 lg:mb-16 tracking-tighter">{brief.headline}</h1>
 
-        <div className="space-y-10 sm:space-y-14 lg:space-y-20">
+        <div className="space-y-10 sm:space-y-14 lg:space-y-20 relative z-10">
           <section>
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900">
+              <div className="w-10 h-10 rounded-xl bg-background-dark/50 border border-surface-border flex items-center justify-center text-slate-400">
                 <Icon name="newspaper" className="text-xl" />
               </div>
-              <h2 className="text-2xl font-black tracking-tight text-slate-900">What Happened</h2>
+              <h2 className="text-2xl font-display font-black tracking-tight text-white">What Happened</h2>
             </div>
-            <p className="text-lg sm:text-xl text-slate-600 leading-[1.7] font-medium">{brief.whatHappened}</p>
+            <p className="text-lg sm:text-xl text-slate-300 leading-[1.7] font-medium">{brief.whatHappened}</p>
           </section>
 
-          <section className="bg-slate-900 text-white p-6 sm:p-8 lg:p-12 rounded-3xl sm:rounded-[2rem] shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10">
+          <section className="bg-gradient-to-br from-slate-900 to-background-dark border border-surface-border text-white p-6 sm:p-8 lg:p-12 rounded-3xl sm:rounded-[2rem] shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
               <Icon name="insights" className="text-[120px]" />
             </div>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.15),transparent_70%)]"></div>
+            <div className="flex items-center gap-4 mb-8 relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                 <Icon name="auto_graph" className="text-xl" />
               </div>
-              <h2 className="text-2xl font-black tracking-tight">Executive Significance</h2>
+              <h2 className="text-2xl font-display font-black tracking-tight text-white">Executive Significance</h2>
             </div>
-            <p className="text-xl sm:text-2xl text-slate-100 leading-[1.6] font-semibold italic border-l-4 border-white/20 pl-5 sm:pl-8">{brief.whyItMatters}</p>
+            <p className="text-xl sm:text-2xl text-slate-200 leading-[1.6] font-semibold italic border-l-4 border-primary/50 pl-5 sm:pl-8 relative z-10">{brief.whyItMatters}</p>
           </section>
 
           <section>
             <div className="flex items-center gap-4 mb-10">
-              <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900">
+              <div className="w-10 h-10 rounded-xl bg-background-dark/50 border border-surface-border flex items-center justify-center text-slate-400">
                 <Icon name="fact_check" className="text-xl" />
               </div>
-              <h2 className="text-2xl font-black tracking-tight text-slate-900">Strategic Considerations</h2>
+              <h2 className="text-2xl font-display font-black tracking-tight text-white">Strategic Considerations</h2>
             </div>
             <ul className="grid gap-4">
               {brief.whatToConsiderNext.map((item, idx) => (
-                <li key={idx} className="flex items-start gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-900 font-black text-sm shrink-0 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                <li key={idx} className="flex items-start gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl bg-background-dark/30 border border-surface-border hover:border-primary/30 transition-colors group">
+                  <div className="w-8 h-8 rounded-full bg-surface-glass border border-surface-border flex items-center justify-center text-slate-400 font-mono font-black text-sm shrink-0 group-hover:bg-primary/20 group-hover:text-primary group-hover:border-primary/30 transition-all">
                     {idx + 1}
                   </div>
-                  <span className="font-bold text-slate-700 text-base sm:text-lg">{item}</span>
+                  <span className="font-bold text-slate-300 text-base sm:text-lg leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
           </section>
         </div>
 
-        <div className="mt-12 sm:mt-16 lg:mt-24 pt-8 sm:pt-12 border-t border-slate-100 flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center">
+        <div className="mt-12 sm:mt-16 lg:mt-24 pt-8 sm:pt-12 border-t border-surface-border flex flex-col sm:flex-row gap-4 sm:gap-6 justify-between items-center relative z-10">
           <div className="flex gap-4">
-            <Button variant="secondary" className="rounded-full px-8">
+            <Button variant="secondary" className="rounded-full px-8 hover:bg-white hover:text-slate-900 transition-colors">
               <Icon name="ios_share" /> Share Intelligence
             </Button>
           </div>
-          <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">
+          <button className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors">
             Download PDF Brief
           </button>
         </div>
