@@ -324,6 +324,58 @@ app.post('/api/auth/signout', async (req, res) => {
     }
 });
 
+app.post('/api/auth/google/start', async (req, res) => {
+    try {
+        if (!supabaseAuth) {
+            return res.status(503).json({ success: false, error: 'Supabase auth is not configured' });
+        }
+        const { redirectTo, intent } = req.body;
+        
+        const { data, error } = await supabaseAuth.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo,
+                queryParams: {
+                    prompt: 'select_account'
+                }
+            }
+        });
+        
+        if (error) {
+            return res.status(400).json({ success: false, error: error.message });
+        }
+        
+        return res.json({ success: true, url: data.url });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: error.message || 'Google auth start failed' });
+    }
+});
+
+app.post('/api/auth/exchange', async (req, res) => {
+    try {
+        if (!supabaseAuth) {
+            return res.status(503).json({ success: false, error: 'Supabase auth is not configured' });
+        }
+        const { code } = req.body;
+        if (!code) {
+            return res.status(400).json({ success: false, error: 'Code is required' });
+        }
+        
+        const { data, error } = await supabaseAuth.auth.exchangeCodeForSession(code);
+        if (error) {
+            return res.status(400).json({ success: false, error: error.message });
+        }
+        
+        return res.json({
+            success: true,
+            token: data.session.access_token,
+            user: mapAuthUser(data.session.user?.email || '')
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: error.message || 'Code exchange failed' });
+    }
+});
+
 app.post('/api/signals', async (req, res) => {
     try {
         const {
