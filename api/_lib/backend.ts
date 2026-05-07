@@ -713,7 +713,23 @@ function pickPrioritizedClusters(ranked: any[], requestedLimit: number, preferen
 }
 
 async function buildBriefPayload({ preferences = {}, timeHorizon = '30d', tierFilter = 'ALL', limit = 18 }) {
-  const rawItems = await fetchNews(tierFilter);
+  let rawItems = await fetchNews(tierFilter);
+
+  // Strictly filter out articles older than the selected time horizon
+  const now = Date.now();
+  let days = 30;
+  if (timeHorizon === '7d') days = 7;
+  else if (timeHorizon === '30d') days = 30;
+  else if (timeHorizon === '6m') days = 180;
+  else if (timeHorizon === '12m') days = 365;
+  const cutoffDate = new Date(now - days * 24 * 60 * 60 * 1000);
+  const beforeFilter = rawItems.length;
+  rawItems = rawItems.filter((item: any) => {
+    if (!item.pubDate) return false; // drop items with no date — can't verify freshness
+    return new Date(item.pubDate) >= cutoffDate;
+  });
+  console.log(`[pipeline] Date filter: ${beforeFilter} → ${rawItems.length} items (cutoff: ${cutoffDate.toISOString()})`);
+
   const normalized = normalizeItems(rawItems);
   const deduped = deduplicateItems(normalized);
   const clusters = clusterItems(deduped);
