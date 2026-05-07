@@ -242,6 +242,19 @@ function cosineSimilarity(aFreq, bFreq) {
     return denominator ? dot / denominator : 0;
 }
 
+function vectorCosineSimilarity(a, b) {
+    if (!a || !b || a.length !== b.length || a.length === 0) return 0;
+    let dot = 0;
+    let aMag = 0;
+    let bMag = 0;
+    for (let i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        aMag += a[i] * a[i];
+        bMag += b[i] * b[i];
+    }
+    return dot / (Math.sqrt(aMag) * Math.sqrt(bMag) || 1);
+}
+
 function semanticFingerprint(item) {
     return tokenFrequency(tokenizeForSimilarity(`${item.clean_title} ${item.clean_text}`));
 }
@@ -290,14 +303,25 @@ function deduplicateItems(items) {
     const uniqueByUrl = Array.from(byCanonicalUrl.values());
     const deduped = [];
     const fingerprints = [];
-    const threshold = Number(process.env.SEMANTIC_DEDUPE_THRESHOLD || 0.85);
+    // Vector similarity often matches closer, threshold can be 0.88
+    const threshold = Number(process.env.SEMANTIC_DEDUPE_THRESHOLD || 0.88);
 
     for (const candidate of uniqueByUrl) {
-        const candidateFp = semanticFingerprint(candidate);
+        const candidateFp = candidate.embedding || [];
+        const hasEmbedding = candidateFp.length > 0;
         let duplicateIndex = -1;
 
         for (let i = 0; i < deduped.length; i += 1) {
-            const similarity = cosineSimilarity(candidateFp, fingerprints[i]);
+            let similarity = 0;
+            if (hasEmbedding && fingerprints[i].length > 0) {
+                similarity = vectorCosineSimilarity(candidateFp, fingerprints[i]);
+            } else {
+                // fallback to token similarity
+                const fp1 = semanticFingerprint(candidate);
+                const fp2 = semanticFingerprint(deduped[i]);
+                similarity = cosineSimilarity(fp1, fp2);
+            }
+            
             if (similarity >= threshold) {
                 duplicateIndex = i;
                 break;
@@ -310,7 +334,7 @@ function deduplicateItems(items) {
         } else {
             const preferred = choosePreferredItem(deduped[duplicateIndex], candidate);
             deduped[duplicateIndex] = preferred;
-            fingerprints[duplicateIndex] = semanticFingerprint(preferred);
+            fingerprints[duplicateIndex] = preferred.embedding || [];
         }
     }
 
@@ -360,6 +384,12 @@ function clusterItems(items) {
 }
 
 function computeImpact(cluster) {
+    const meta = cluster.representative?.extractedMetadata;
+    if (meta && meta.executive_impact_score) {
+        return Math.min(3.5, meta.executive_impact_score * 0.35); // Scale 1-10 to max 3.5
+    }
+
+    // Fallback
     const text = `${cluster.representative.clean_title} ${cluster.representative.clean_text}`.toLowerCase();
     let impact = 0.8;
     if (/(pricing|cost|launch|release|security|compliance|availability|ga|general availability)/.test(text)) impact += 1.4;
@@ -369,6 +399,10 @@ function computeImpact(cluster) {
 }
 
 function computeUrgency(cluster) {
+    const meta = cluster.representative?.extractedMetadata;
+    if (meta && meta.is_threat) return 2.5; // Threats are highly urgent
+
+    // Fallback
     const text = `${cluster.representative.clean_title} ${cluster.representative.clean_text}`.toLowerCase();
     if (/(security|deprecation|incident|deadline|urgent|critical)/.test(text)) return 2;
     if (/(launch|released|available now|today)/.test(text)) return 1.4;
@@ -387,6 +421,16 @@ function computeLeaderFit(cluster, preferences = {}) {
     const areaTerms = areas.flatMap((area) => DECISION_AREA_KEYWORDS[area] || [String(area || '')]);
     const areaMatch = areaTerms.length ? termCoverage(text, areaTerms) : 0;
 
+    // Vector Semantic Match
+    const concernEmbedding = preferences.concernEmbedding || [];
+    const articleEmbedding = cluster.representative?.embedding || [];
+    let semanticMatch = 0;
+    if (concernEmbedding.length && articleEmbedding.length) {
+        semanticMatch = vectorCosineSimilarity(concernEmbedding, articleEmbedding);
+        // Map embedding cosine similarity to a more spread out score [0, 1]
+        semanticMatch = clamp((semanticMatch - 0.2) * 1.5, 0, 1);
+    }
+
     const concernTokens = tokenize(concern).filter((token) => !GENERIC_CONCERN_TOKENS.has(token));
     const expandedConcernTerms = new Set(concernTokens);
     for (const token of concernTokens) {
@@ -399,8 +443,10 @@ function computeLeaderFit(cluster, preferences = {}) {
         ? termCoverage(text, concernTerms)
         : (fallbackConcernTokens.length ? termCoverage(text, fallbackConcernTokens) * 0.35 : 0);
     const concernPhraseMatch = concern && termMatchesText(text, concern) ? 1 : 0;
+    
+    // Combine old keyword match with new semantic match (weighted towards semantic)
     const concernMatch = concern
-        ? Math.min(1, concernTokenMatch * 0.65 + concernPhraseMatch * 0.35)
+        ? Math.min(1, Math.max(semanticMatch, concernTokenMatch * 0.65 + concernPhraseMatch * 0.35))
         : 0;
 
     const hasPersonalization = Boolean(role || concern || areas.length);
@@ -408,8 +454,16 @@ function computeLeaderFit(cluster, preferences = {}) {
         ? clamp((roleMatch * 0.2) + (areaMatch * 0.25) + (concernMatch * 0.55), 0, 1)
         : 0.5;
 
+    // Dynamic Role Based Adjustments
+    const meta = cluster.representative?.extractedMetadata || {};
+    const audience = meta.primary_audience || 'General';
+    let roleBoost = 0;
+    if (role === 'Founder' && (audience === 'GTM' || meta.executive_impact_score > 7)) roleBoost = 0.4;
+    if (role === 'Business Leader' && (audience === 'Finance' || audience === 'Security' || meta.is_threat)) roleBoost = 0.4;
+    if (role === 'Product Leader' && (audience === 'Product' || audience === 'Engineering')) roleBoost = 0.4;
+
     const score = hasPersonalization
-        ? clamp(0.25 + personalizationMatch * 2.75, 0.25, 3)
+        ? clamp(0.25 + personalizationMatch * 2.75 + roleBoost, 0.25, 3)
         : 1.1;
 
     // Strategic boost based on modern AI shifts
@@ -422,6 +476,7 @@ function computeLeaderFit(cluster, preferences = {}) {
         roleMatch,
         areaMatch,
         concernMatch,
+        semanticMatch,
         strategicMatch
     };
 }
@@ -528,6 +583,7 @@ function scoreAndRankClusters(clusters, preferences = {}, timeHorizon = '30d') {
                 roleMatch: leaderFitDetails.roleMatch,
                 areaMatch: leaderFitDetails.areaMatch,
                 concernMatch: leaderFitDetails.concernMatch,
+                semanticMatch: leaderFitDetails.semanticMatch,
                 strategicMatch: leaderFitDetails.strategicMatch,
                 noise,
                 score

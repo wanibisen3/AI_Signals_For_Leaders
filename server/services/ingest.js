@@ -29,8 +29,8 @@ async function fetchNews(tierFilter = 'ALL') {
                 title: item.title || '',
                 link: item.link,
                 pubDate: item.pubDate ? new Date(item.pubDate) : null,
-                contentSnippet: item.contentSnippet || item.summary || '',
-                content: item.content || '',
+                contentSnippet: item.contentSnippet || item.summary || item.itunes?.summary || item.itunes?.subtitle || '',
+                content: item.content || item.itunes?.summary || '',
                 author: item.creator || item.author || 'Unknown'
             }));
         } catch (error) {

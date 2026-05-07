@@ -31,7 +31,14 @@ const SOURCES = [
     { name: "Ben's Bites", url: 'https://www.bensbites.com/feed', tier: 'C', trust: 0.7, type: 'rss' },
     { name: 'Import AI', url: 'https://importai.substack.com/feed', tier: 'C', trust: 0.75, type: 'rss' },
     { name: 'Prompts Daily', url: 'https://www.promptsdaily.ai/feed', tier: 'C', trust: 0.65, type: 'rss' },
-    { name: 'Superhuman AI Newsletter', url: 'https://www.superhuman.ai/feed', tier: 'C', trust: 0.7, type: 'rss' }
+    { name: 'Superhuman AI Newsletter', url: 'https://www.superhuman.ai/feed', tier: 'C', trust: 0.7, type: 'rss' },
+
+    // Podcasts (Tier A/B)
+    { name: 'Latent Space Podcast', url: 'https://api.substack.com/feed/podcast/1089568.rss', tier: 'A', trust: 0.95, type: 'podcast' },
+    { name: 'The AI Breakdown', url: 'https://feeds.megaphone.fm/theaibreakdown', tier: 'B', trust: 0.85, type: 'podcast' },
+
+    // Global / Specialized
+    { name: 'AI News Global', url: 'https://www.artificialintelligence-news.com/feed/', tier: 'B', trust: 0.8, type: 'rss' }
 ];
 
 const CATEGORY_KEYWORDS = {

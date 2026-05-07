@@ -9,6 +9,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { fetchNews } = require('./services/ingest');
 const { normalizeItems, deduplicateItems, clusterItems, scoreAndRankClusters } = require('./services/process');
 const { generateBrief } = require('./services/generation');
+const { getEmbeddingsBatch, extractMetadataLLMBatch, getEmbedding } = require('./services/extraction');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -163,8 +164,25 @@ async function runPipeline({
 }) {
     const rawItems = await fetchNews(tierFilter);
     const normalized = normalizeItems(rawItems);
+    
+    const textsForEmbedding = normalized.map(item => `${item.clean_title} ${item.clean_text}`);
+    const embeddings = await getEmbeddingsBatch(textsForEmbedding);
+    for (let i = 0; i < normalized.length; i++) {
+        normalized[i].embedding = embeddings[i];
+    }
+    
     const deduped = deduplicateItems(normalized);
+    
+    const metadataList = await extractMetadataLLMBatch(deduped);
+    for (let i = 0; i < deduped.length; i++) {
+        deduped[i].extractedMetadata = metadataList[i];
+    }
+    
     const clusters = clusterItems(deduped);
+    
+    const concernEmbedding = await getEmbedding(preferences.mainConcern || '');
+    preferences.concernEmbedding = concernEmbedding;
+    
     const ranked = scoreAndRankClusters(clusters, preferences, timeHorizon);
     const hasPersonalization = Boolean(
         preferences?.role ||
