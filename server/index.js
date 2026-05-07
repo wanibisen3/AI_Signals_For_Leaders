@@ -162,7 +162,21 @@ async function runPipeline({
     tierFilter = 'ALL',
     limit = 7
 }) {
-    const rawItems = await fetchNews(tierFilter);
+    let rawItems = await fetchNews(tierFilter);
+    
+    const now = Date.now();
+    let days = 30;
+    if (timeHorizon === '7d') days = 7;
+    else if (timeHorizon === '30d') days = 30;
+    else if (timeHorizon === '6m') days = 180;
+    else if (timeHorizon === '12m') days = 365;
+    
+    const cutoffDate = new Date(now - days * 24 * 60 * 60 * 1000);
+    rawItems = rawItems.filter(item => {
+        if (!item.pubDate) return true;
+        return new Date(item.pubDate) >= cutoffDate;
+    });
+
     const normalized = normalizeItems(rawItems);
     
     const textsForEmbedding = normalized.map(item => `${item.clean_title} ${item.clean_text}`);
